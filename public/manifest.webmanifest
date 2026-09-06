@@ -1,0 +1,12 @@
+{
+  "id": "/",
+  "name": "晚钟 · 个人时间助手",
+  "short_name": "晚钟",
+  "description": "根据时间与精力安排个人目标，专注于眼前的一小步。",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#192741",
+  "icons": [{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}

@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+const base=process.env.SMOKE_URL||'http://localhost:3000';
+const root=await fetch(base);assert.equal(root.status,200);
+const health=await fetch(base+'/api/agent');assert.equal(health.status,200);const config=await health.json();assert.ok(['local','ai'].includes(config.mode));
+const post=(body)=>fetch(base+'/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+const response=await post({action:'decompose',title:'完成作品集',outcome:'完成可检查的初稿',source:'整理截图 25分钟\n写介绍 50分钟'});
+assert.equal(response.status,200);const data=await response.json();assert.equal(data.tasks.length,2);assert.equal(data.tasks[0].minutes,25);
+const invalid=await post({action:'unknown'});assert.equal(invalid.status,400);
+const noTitle=await post({action:'decompose',title:''});assert.equal(noTitle.status,400);
+const prioritize=await post({action:'prioritize',checkin:{date:'2026-09-05',start:'20:00',end:'22:00',energy:'medium'},tasks:[{id:'habit:exercise:2026-09-05',title:'锻炼',kind:'habit',remaining:30,deadline:null}]});assert.equal(prioritize.status,200);assert.equal((await prioritize.json()).mode,'local');
+const badHabit=await post({action:'prioritize',tasks:[{id:'h',title:'锻炼',kind:'habit',remaining:-1}]});assert.equal(badHabit.status,400);
+const duplicate=await post({action:'prioritize',tasks:[{id:'h',title:'锻炼',kind:'habit',remaining:30},{id:'h',title:'锻炼',kind:'habit',remaining:30}]});assert.equal(duplicate.status,400);
+const origin=await fetch(base+'/api/agent',{method:'POST',headers:{Origin:'https://untrusted.invalid','Content-Type':'application/json'},body:JSON.stringify({action:'coach',message:'hi'})});assert.equal(origin.status,403);
+for(const path of ['/manifest.webmanifest','/icon.svg','/sw.js'])assert.equal((await fetch(base+path)).status,200);
+console.log('HTTP smoke: page, configuration, decomposition, habit prioritization fallback, invalid/duplicate input rejection, origin protection and PWA assets passed.');
