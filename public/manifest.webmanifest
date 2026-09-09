@@ -1,12 +1,19 @@
 {
   "id": "/",
-  "name": "晚钟 · 个人时间助手",
-  "short_name": "晚钟",
-  "description": "根据时间与精力安排个人目标，专注于眼前的一小步。",
-  "lang": "zh-CN",
+  "name": "Evening Bell",
+  "short_name": "Evening Bell",
+  "description": "Plan around your time and energy, and focus on one small step at a time.",
+  "lang": "en",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f5f7fb",
   "theme_color": "#192741",
-  "icons": [{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }

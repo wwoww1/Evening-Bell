@@ -1,4 +1,4 @@
-const CACHE = 'afterhours-v2';
+const CACHE = 'afterhours-v3-i18n';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
@@ -58,7 +58,7 @@ self.addEventListener('fetch', (event) => {
           const page = await caches.match('/');
           if (page) return page;
         }
-        return new Response('离线内容尚未缓存，请联网打开一次。', {
+        return new Response('Offline content is not cached yet. Connect to the internet and open the app once.', {
           status: 503,
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         });

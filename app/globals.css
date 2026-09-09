@@ -1487,3 +1487,73 @@ summary {
     gap: 10px;
   }
 }
+
+/* Language controls share the existing palette and remain accessible on phones. */
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  padding: 0.35rem 0.55rem;
+  background: var(--background);
+  font-size: 0.875rem;
+}
+.language-switcher select {
+  min-width: 5.4rem;
+  max-width: 8rem;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 0.15rem;
+}
+.language-switcher:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.language-settings .language-switcher {
+  margin-top: 1rem;
+}
+html[lang='en'] .brand {
+  font-size: 1.1rem;
+}
+html[lang='en'] .clock-ring span {
+  padding-inline: 0.65rem;
+  max-width: 10rem;
+  line-height: 1.4;
+}
+.timeline-title h3,
+.goal-task .grow,
+.topbar-actions {
+  min-width: 0;
+}
+.timeline-title h3,
+.focus-task {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .topbar-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+  }
+  .topbar {
+    gap: 0.35rem;
+  }
+  .language-switcher {
+    padding: 0.25rem 0.35rem;
+  }
+  .topbar-actions > button {
+    padding-inline: 0.6rem;
+  }
+}
+
+html[lang='en'] .brand {
+  letter-spacing: 0.02em;
+}
+html[lang='en'] .brand small {
+  display: none;
+}

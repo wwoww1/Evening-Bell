@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/components/planner/language-provider';
 import type { ReactNode } from 'react';
 import {
   Select,
@@ -19,11 +20,12 @@ export function Field({
   note?: string;
   className?: string;
 }) {
+  const { tr } = useI18n();
   return (
     <label className={`field ${className}`}>
-      <span>{label}</span>
+      <span>{tr(label)}</span>
       {children}
-      {note && <span className="field-note">{note}</span>}
+      {note && <span className="field-note">{tr(note)}</span>}
     </label>
   );
 }
@@ -38,19 +40,20 @@ export function Choice({
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
 }) {
+  const { tr } = useI18n();
   return (
     <Select
       value={value}
       onValueChange={(v) => v !== null && onChange(v)}
-      items={options}
+      items={options.map((o) => ({ ...o, label: tr(o.label) }))}
     >
-      <SelectTrigger aria-label={label}>
+      <SelectTrigger aria-label={tr(label)}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
         {options.map((o) => (
           <SelectItem key={o.value} value={o.value}>
-            {o.label}
+            {tr(o.label)}
           </SelectItem>
         ))}
       </SelectContent>
@@ -66,10 +69,11 @@ export function Check({
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
+  const { tr } = useI18n();
   return (
     <label className="check-label">
       <Checkbox checked={checked} onCheckedChange={onChange} />
-      <span>{label}</span>
+      <span>{tr(label)}</span>
     </label>
   );
 }

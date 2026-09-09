@@ -1,3 +1,5 @@
+import { createTranslator } from './i18n.ts';
+import type { Locale } from './i18n.ts';
 export type Energy = 'low' | 'medium' | 'high';
 export type TaskStatus = 'todo' | 'doing' | 'done' | 'cancelled';
 export interface Goal {
@@ -219,21 +221,22 @@ export function initialState(): AppState {
 }
 export const activeTask = (t: Task) =>
   t.status !== 'done' && t.status !== 'cancelled';
-export function exampleState(base: AppState): AppState {
+export function exampleState(base: AppState, locale: Locale = 'en'): AppState {
+  const tr = createTranslator(locale);
   const date = localDate();
   const goals: Goal[] = [
     {
       id: uid(),
-      title: '完成个人作品集',
-      outcome: '三个项目案例完成文字与排版',
+      title: tr('完成个人作品集'),
+      outcome: tr('三个项目案例完成文字与排版'),
       deadline: `${addDays(date, 14)}T22:30`,
       priority: 3,
       color: '#4f67a4',
     },
     {
       id: uid(),
-      title: '把阅读变成习惯',
-      outcome: '读完一本书并整理读书笔记',
+      title: tr('把阅读变成习惯'),
+      outcome: tr('读完一本书并整理读书笔记'),
       deadline: `${addDays(date, 21)}T22:30`,
       priority: 1,
       color: '#bc9150',
@@ -245,8 +248,8 @@ export function exampleState(base: AppState): AppState {
     {
       id: a,
       goalId: goals[0].id,
-      title: '整理项目 A 的三张截图',
-      outcome: '选出三张清晰截图，保存到素材文件夹',
+      title: tr('整理项目 A 的三张截图'),
+      outcome: tr('选出三张清晰截图，保存到素材文件夹'),
       estimate: 25,
       remaining: 25,
       energy: 'medium',
@@ -258,8 +261,8 @@ export function exampleState(base: AppState): AppState {
     {
       id: b,
       goalId: goals[0].id,
-      title: '写项目 A 的介绍草稿',
-      outcome: '说明背景、自己的贡献和项目结果',
+      title: tr('写项目 A 的介绍草稿'),
+      outcome: tr('说明背景、自己的贡献和项目结果'),
       estimate: 25,
       remaining: 25,
       energy: 'high',
@@ -271,8 +274,8 @@ export function exampleState(base: AppState): AppState {
     {
       id: uid(),
       goalId: goals[1].id,
-      title: '阅读一节并记下一句话',
-      outcome: '阅读一节，摘录一句有启发的内容',
+      title: tr('阅读一节并记下一句话'),
+      outcome: tr('阅读一节，摘录一句有启发的内容'),
       estimate: 15,
       remaining: 15,
       energy: 'low',

@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/components/planner/language-provider';
 import { useState } from 'react';
 import {
   Plus,
@@ -59,6 +60,7 @@ export function HabitsView({
   onNotice: (text: string) => void;
   onSchedule: () => void;
 }) {
+  const { tr } = useI18n();
   const [draft, setDraft] = useState<Habit | null>(null),
     [remove, setRemove] = useState<Habit | null>(null),
     [error, setError] = useState('');
@@ -81,14 +83,14 @@ export function HabitsView({
     <div className="form-stack">
       <div className="habit-intro panel">
         <div>
-          <h2>每天想为自己做的事</h2>
+          <h2>{tr('每天想为自己做的事')}</h2>
           <p className="muted">
-            不需要截止日期。小晚会在安排今晚时，一并考虑当天的习惯。
+            {tr('不需要截止日期。小晚会在安排今晚时，一并考虑当天的习惯。')}
           </p>
         </div>
         <div className="actions">
           <Button variant="outline" onClick={onSchedule}>
-            加入今晚的安排
+            {tr('加入今晚的安排')}
           </Button>
           <Button
             onClick={() => {
@@ -96,22 +98,24 @@ export function HabitsView({
               setDraft(emptyHabit());
             }}
           >
-            <Plus /> 新建习惯
+            <Plus />
+            {tr(' 新建习惯')}
           </Button>
         </div>
       </div>
       {error && !draft && !remove && (
         <p className="alert error" role="alert">
-          {error}
+          {tr(error)}
         </p>
       )}
       {!state.habits.length ? (
         <div className="panel empty-state">
           <Repeat2 />
-          <h3>从一个愿意重复的小习惯开始</h3>
-          <p>例如每天锻炼 30 分钟、睡前阅读 15 分钟。</p>
+          <h3>{tr('从一个愿意重复的小习惯开始')}</h3>
+          <p>{tr('例如每天锻炼 30 分钟、睡前阅读 15 分钟。')}</p>
           <Button onClick={() => setDraft(emptyHabit())}>
-            <Plus /> 添加第一个习惯
+            <Plus />
+            {tr(' 添加第一个习惯')}
           </Button>
         </div>
       ) : (
@@ -135,14 +139,14 @@ export function HabitsView({
                     <Repeat2 size={21} />
                   </span>
                   <Switch
-                    aria-label={`启用${h.title}`}
+                    aria-label={tr('启用{0}', [h.title])}
                     checked={h.enabled}
                     onCheckedChange={(v) =>
                       void update(
                         (s) => saveHabit(s, { ...h, enabled: v }),
                         v
-                          ? '习惯已启用，下次排程会纳入。'
-                          : '习惯已暂停，历史记录保留。',
+                          ? tr('习惯已启用，下次排程会纳入。')
+                          : tr('习惯已暂停，历史记录保留。'),
                       )
                     }
                   />
@@ -151,31 +155,40 @@ export function HabitsView({
                 <div className="habit-meta">
                   <span>
                     <Clock3 size={15} />
-                    {h.minutes} 分钟
+                    {h.minutes}
+                    {tr(' 分钟')}
                   </span>
                   <span>
                     {h.days.length === 7
-                      ? '每天'
+                      ? tr('每天')
                       : h.days
                           .map(
                             (d) =>
-                              '周' +
-                              ['日', '一', '二', '三', '四', '五', '六'][d],
+                              tr('周') +
+                              [
+                                tr('日'),
+                                tr('一'),
+                                tr('二'),
+                                tr('三'),
+                                tr('四'),
+                                tr('五'),
+                                tr('六'),
+                              ][d],
                           )
-                          .join('、')}
+                          .join(tr('、'))}
                   </span>
                 </div>
                 <p className="muted">
                   {done
-                    ? '今天已完成'
+                    ? tr('今天已完成')
                     : !h.enabled
-                      ? '已暂停'
+                      ? tr('已暂停')
                       : !scheduled
-                        ? '今天休息'
+                        ? tr('今天休息')
                         : skipped
-                          ? '今天已延后'
-                          : '今天待安排'}{' '}
-                  · {h.splittable ? '可以分次完成' : '安排一段完整时间'}
+                          ? tr('今天已延后')
+                          : tr('今天待安排')}{' '}
+                  · {h.splittable ? tr('可以分次完成') : tr('安排一段完整时间')}
                 </p>
                 <div className="actions mt-5">
                   <Button
@@ -191,16 +204,16 @@ export function HabitsView({
                             0,
                             false,
                           ),
-                        `${h.title}：今天已完成。`,
+                        tr('{0}：今天已完成。', [h.title]),
                       )
                     }
                   >
                     <CheckCircle2 />
-                    {done ? '今天已完成' : '标记今天完成'}
+                    {done ? tr('今天已完成') : tr('标记今天完成')}
                   </Button>
                   <Button
                     variant="ghost"
-                    aria-label={`编辑${h.title}`}
+                    aria-label={tr('编辑{0}', [h.title])}
                     onClick={() => {
                       setError('');
                       setDraft({ ...h, days: [...h.days] });
@@ -210,7 +223,7 @@ export function HabitsView({
                   </Button>
                   <Button
                     variant="ghost"
-                    aria-label={`删除${h.title}`}
+                    aria-label={tr('删除{0}', [h.title])}
                     onClick={() => {
                       setError('');
                       setRemove(h);
@@ -230,25 +243,27 @@ export function HabitsView({
             <DialogHeader>
               <DialogTitle>
                 {state.habits.some((h) => h.id === draft.id)
-                  ? '调整这个习惯'
-                  : '添加一个每日习惯'}
+                  ? tr('调整这个习惯')
+                  : tr('添加一个每日习惯')}
               </DialogTitle>
               <DialogDescription>
-                不设置截止日期。每次安排时，小晚会根据时间和精力为它留出空间。
+                {tr(
+                  '不设置截止日期。每次安排时，小晚会根据时间和精力为它留出空间。',
+                )}
               </DialogDescription>
             </DialogHeader>
             <div className="form-grid">
-              <Field label="习惯名称">
+              <Field label={tr('习惯名称')}>
                 <input
                   maxLength={100}
                   value={draft.title}
-                  placeholder="例如：锻炼身体"
+                  placeholder={tr('例如：锻炼身体')}
                   onChange={(e) =>
                     setDraft({ ...draft, title: e.target.value })
                   }
                 />
               </Field>
-              <Field label="每次时长（分钟）">
+              <Field label={tr('每次时长（分钟）')}>
                 <input
                   type="number"
                   min={1}
@@ -259,62 +274,68 @@ export function HabitsView({
                   }
                 />
               </Field>
-              <Field label="需要的精力">
+              <Field label={tr('需要的精力')}>
                 <Choice
-                  label="习惯精力"
+                  label={tr('习惯精力')}
                   value={draft.energy}
                   options={energyOptions}
                   onChange={(v) => setDraft({ ...draft, energy: v as Energy })}
                 />
               </Field>
-              <Field label="优先级">
+              <Field label={tr('优先级')}>
                 <Choice
-                  label="习惯优先级"
+                  label={tr('习惯优先级')}
                   value={String(draft.priority)}
                   options={[
-                    { value: '3', label: '高 · 尽量保留' },
-                    { value: '2', label: '中 · 按节奏安排' },
-                    { value: '1', label: '低 · 有空再做' },
+                    { value: '3', label: tr('高 · 尽量保留') },
+                    { value: '2', label: tr('中 · 按节奏安排') },
+                    { value: '1', label: tr('低 · 有空再做') },
                   ]}
                   onChange={(v) => setDraft({ ...draft, priority: Number(v) })}
                 />
               </Field>
             </div>
             <div>
-              <p className="field-note">重复日期</p>
+              <p className="field-note">{tr('重复日期')}</p>
               <div className="weekday-list">
-                {['日', '一', '二', '三', '四', '五', '六'].map(
-                  (name, index) => (
-                    <Check
-                      key={name}
-                      label={`周${name}`}
-                      checked={draft.days.includes(index)}
-                      onChange={(v) =>
-                        setDraft({
-                          ...draft,
-                          days: v
-                            ? [...draft.days, index].sort((a, b) => a - b)
-                            : draft.days.filter((d) => d !== index),
-                        })
-                      }
-                    />
-                  ),
-                )}
+                {[
+                  tr('日'),
+                  tr('一'),
+                  tr('二'),
+                  tr('三'),
+                  tr('四'),
+                  tr('五'),
+                  tr('六'),
+                ].map((name, index) => (
+                  <Check
+                    key={name}
+                    label={tr('周{0}', [name])}
+                    checked={draft.days.includes(index)}
+                    onChange={(v) =>
+                      setDraft({
+                        ...draft,
+                        days: v
+                          ? [...draft.days, index].sort((a, b) => a - b)
+                          : draft.days.filter((d) => d !== index),
+                      })
+                    }
+                  />
+                ))}
               </div>
             </div>
             <Check
-              label="允许分次完成"
+              label={tr('允许分次完成')}
               checked={draft.splittable}
               onChange={(v) => setDraft({ ...draft, splittable: v })}
             />
             {error && (
               <p className="alert error" role="alert">
-                {error}
+                {tr(error)}
               </p>
             )}
             <div className="dialog-actions">
               <Button variant="outline" onClick={() => setDraft(null)}>
-                取消
+                {tr('取消')}
               </Button>
               <Button
                 onClick={async () => {
@@ -322,13 +343,13 @@ export function HabitsView({
                     await update(
                       (s) =>
                         saveHabit(s, { ...draft, title: draft.title.trim() }),
-                      '习惯已保存，安排今晚时会自动纳入。',
+                      tr('习惯已保存，安排今晚时会自动纳入。'),
                     )
                   )
                     setDraft(null);
                 }}
               >
-                保存习惯
+                {tr('保存习惯')}
               </Button>
             </div>
           </DialogContent>
@@ -337,14 +358,17 @@ export function HabitsView({
       <AlertDialog open={!!remove} onOpenChange={(v) => !v && setRemove(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>删除“{remove?.title}”？</AlertDialogTitle>
+            <AlertDialogTitle>
+              {tr('删除“')}
+              {remove?.title}”？
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              以后不再安排这个习惯。已经完成的记录和专注历史仍会保留。
+              {tr('以后不再安排这个习惯。已经完成的记录和专注历史仍会保留。')}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {error && <p className="alert error">{error}</p>}
+          {error && <p className="alert error">{tr(error)}</p>}
           <AlertDialogFooter>
-            <AlertDialogCancel>保留</AlertDialogCancel>
+            <AlertDialogCancel>{tr('保留')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={async () => {
@@ -352,13 +376,13 @@ export function HabitsView({
                   remove &&
                   (await update(
                     (s) => removeHabit(s, remove.id),
-                    '习惯已删除，历史记录已保留。',
+                    tr('习惯已删除，历史记录已保留。'),
                   ))
                 )
                   setRemove(null);
               }}
             >
-              删除习惯
+              {tr('删除习惯')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

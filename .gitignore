@@ -40,3 +40,20 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+/anna/bundle/
+**/.anna/
+
+# local dependency stores and editor files
+.pnpm-store/
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# generated GitHub packages and private exports
+/releases/
+*.zip
+*-backup.json
+*-feedback.json
+晚钟-*.json
+*.key

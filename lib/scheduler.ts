@@ -564,6 +564,38 @@ export function parseCheckin(
   text: string,
   current: Checkin,
 ): { checkin: Checkin; reply: string } {
+  // Both language versions use the same scheduling rules.
+  const english = text
+    .toLowerCase()
+    .replace(/half an? hour/g, '30 minutes')
+    .replace(/\b(?:an?|one) hour\b/g, '1 hour');
+  const later =
+    english.match(
+      /(?:start|begin)\s+(?:in\s+)?(\d+)\s*(minutes?|mins?|hours?|hrs?)\s+later/,
+    ) ||
+    english.match(
+      /(?:delay|postpone|push back|start later)\s+(?:(?:the start|by)\s+)*(\d+)\s*(minutes?|mins?|hours?|hrs?)/,
+    );
+  if (later)
+    text +=
+      ' 晚' + Number(later[1]) * (/^(?:h|hr)/.test(later[2]) ? 60 : 1) + '分钟';
+  if (
+    /\b(tired|exhausted|low energy)\b/.test(english) &&
+    !/\bnot (?:tired|exhausted)\b/.test(english)
+  )
+    text += ' 累';
+  if (/\b(energetic|full of energy|high energy)\b/.test(english))
+    text += ' 精力充沛';
+  const available = english.match(
+    /\b(?:only|just)\s+(?:(?:have|do|work|focus|want to|can|for)\s+)*(\d+)\s*(minutes?|mins?|hours?|hrs?)/,
+  );
+  if (available)
+    text +=
+      ' 只有' +
+      Number(available[1]) * (/^(?:h|hr)/.test(available[2]) ? 60 : 1) +
+      '分钟';
+  if (/\b(rest today|take today off|no tasks today)\b/.test(english))
+    text += ' 今天休息';
   const next = structuredClone(current);
   const delay = text.match(
     /(?:晚|推迟|延后)\s*(半小时|一小时|\d+\s*(?:分钟|小时))/,

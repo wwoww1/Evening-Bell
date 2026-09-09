@@ -1,5 +1,5 @@
-# 可选：兼容 Chat Completions 协议的模型服务。
-# 复制为 .dev.vars，填写后重新启动。密钥只在服务端读取。
+# Optional model provider compatible with Chat Completions.
+# Copy to .dev.vars, fill in the values, and restart. Keys stay on the server.
 AI_API_KEY=""
 AI_BASE_URL="https://your-provider.example/v1"
 AI_MODEL="your-model-name"

@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/components/planner/language-provider';
 import { useState } from 'react';
 import { Bell, CalendarDays, Clock3, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ export function NotificationCenter({
   onClose: () => void;
   onOpenItem: (item: AppNotification) => void;
 }) {
+  const { tr, locale } = useI18n();
   const [error, setError] = useState('');
   async function markRead(id?: string) {
     setError('');
@@ -34,7 +36,7 @@ export function NotificationCenter({
       }));
       return true;
     } catch {
-      setError('未能更新通知，请检查浏览器存储空间。');
+      setError(tr('未能更新通知，请检查浏览器存储空间。'));
       return false;
     }
   }
@@ -44,25 +46,29 @@ export function NotificationCenter({
         <SheetHeader>
           <SheetTitle>
             <Bell size={20} className="inline mr-2" />
-            通知
+            {tr('通知')}
           </SheetTitle>
-          <SheetDescription>查看任务、番茄钟和目标截止提醒。</SheetDescription>
+          <SheetDescription>
+            {tr('查看任务、番茄钟和目标截止提醒。')}
+          </SheetDescription>
         </SheetHeader>
         <div className="notification-toolbar">
           <span className="muted">
-            {state.notifications.filter((n) => !n.read).length} 条未读
+            {state.notifications.filter((n) => !n.read).length}
+            {tr(' 条未读')}
           </span>
           <Button
             variant="ghost"
             disabled={!state.notifications.some((n) => !n.read)}
             onClick={() => void markRead()}
           >
-            <CheckCheck /> 全部已读
+            <CheckCheck />
+            {tr(' 全部已读')}
           </Button>
         </div>
         {error && (
           <p className="alert error mx-5" role="alert">
-            {error}
+            {tr(error)}
           </p>
         )}
         <div className="notification-list">
@@ -83,12 +89,12 @@ export function NotificationCenter({
               </span>
               <div>
                 <h3>
-                  {n.title}
+                  {tr(n.title)}
                   {!n.read && <span className="unread-dot" />}
                 </h3>
-                <p>{n.message}</p>
+                <p>{n.kind === 'timer' ? tr(n.message) : n.message}</p>
                 <small>
-                  {new Date(n.createdAt).toLocaleString('zh-CN', {
+                  {new Date(n.createdAt).toLocaleString(locale, {
                     month: 'numeric',
                     day: 'numeric',
                     hour: '2-digit',
@@ -101,8 +107,8 @@ export function NotificationCenter({
           {!state.notifications.length && (
             <div className="empty-state">
               <Bell />
-              <h3>暂时没有新通知</h3>
-              <p>有任务提醒或目标临近截止时，会出现在这里。</p>
+              <h3>{tr('暂时没有新通知')}</h3>
+              <p>{tr('有任务提醒或目标临近截止时，会出现在这里。')}</p>
             </div>
           )}
         </div>

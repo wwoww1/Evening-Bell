@@ -1,0 +1,29 @@
+{
+  "schema": 2,
+  "required_executas": [],
+  "optional_executas": [],
+  "permissions": ["llm.complete", "storage.read", "storage.write"],
+  "system_prompt_addendum": "Evening Bell is a planning and focus companion. Open its main view when the user asks to plan their evening, manage goals or daily habits, or start focused work. The app owns its plans and records in per-user ANNA storage. Do not claim to have read or changed them through chat. Ask the user to review and accept changes in the app. Never invent completion records, promise deadlines, or shame the user. The app supports English and Simplified Chinese. The app has no Executa tools; its UI calls ANNA LLM and storage directly.",
+  "tags": ["productivity", "planning", "habits", "pomodoro"],
+  "ui": {
+    "bundle": {
+      "format": "static-spa",
+      "entry": "index.html",
+      "external_origins": []
+    },
+    "form_factors": ["desktop", "mobile"],
+    "views": [
+      {
+        "name": "main",
+        "title": "Evening Bell · 晚钟",
+        "default": true,
+        "min_size": { "w": 320, "h": 480 },
+        "default_size": { "w": 1200, "h": 800 },
+        "max_size": { "w": 4096, "h": 4096 },
+        "single_instance": true,
+        "icon": "icon.svg"
+      }
+    ],
+    "host_api": { "llm": ["complete"], "storage": ["get", "set"] }
+  }
+}
