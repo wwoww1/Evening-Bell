@@ -7,6 +7,16 @@ import { parseBackup } from '../lib/backup.ts';
 import { handleAgentRequest } from '../lib/agent-service.ts';
 import { installAnnaRuntime } from '../lib/anna-runtime.ts';
 import { agentRequest } from '../lib/agent-client.ts';
+import {
+  EditConflictError,
+  assertSettingsUnchanged,
+  settingsEditBaseline,
+  assertGoalUnchanged,
+  goalEditBaseline,
+} from '../lib/editing.ts';
+import { recordProgress } from '../lib/actions.ts';
+import { translate } from '../lib/i18n.ts';
+import { atomicUpdate, initializeState } from '../lib/store.ts';
 
 function host(seed) {
   let value = seed,
@@ -72,6 +82,139 @@ test('ANNA serializes writes and re-reads remote changes before modifying state'
   await store.update((s) => ({ ...s, notified: [...s.notified, 'c'] }));
   assert.deepEqual(store.read().notified, ['a', 'b', 'c']);
   assert.equal(store.read().settings.name, 'Another device');
+});
+test('An open settings draft cannot undo a later save from another device, even after refresh', async () => {
+  const api = host(initialState());
+  const first = createAnnaStateStore(api, () => {});
+  const second = createAnnaStateStore(api, () => {});
+  await first.refresh();
+  const baseline = settingsEditBaseline(first.read().settings);
+  const draft = { ...first.read().settings, name: 'Alice' };
+  await second.update((state) => ({
+    ...state,
+    settings: { ...state.settings, focusMinutes: 50 },
+  }));
+  await first.refresh();
+  const before = api.peek();
+  await assert.rejects(
+    first.update((state) => {
+      assertSettingsUnchanged(state.settings, baseline);
+      return { ...state, settings: draft };
+    }),
+    EditConflictError,
+  );
+  assert.deepEqual(api.peek(), before);
+  assert.equal(api.writes, 1);
+  assert.equal(draft.name, 'Alice');
+  assert.equal(draft.focusMinutes, 25);
+  assert.equal(first.read().settings.focusMinutes, 50);
+});
+test('Settings can be saved again after a successful save, explicit import or clear', async () => {
+  const api = host(initialState());
+  const store = createAnnaStateStore(api, () => {});
+  await store.refresh();
+  let baseline = settingsEditBaseline(store.read().settings);
+  const imported = exampleState(initialState());
+  imported.settings.name = 'Imported';
+  imported.settings.focusMinutes = 40;
+  for (const replacement of [null, imported, initialState()]) {
+    if (replacement) {
+      const saved = await store.update(() => replacement);
+      baseline = settingsEditBaseline(saved.settings);
+    }
+    for (const name of ['First edit', 'Second edit']) {
+      // An unrelated change must not make this settings form stale.
+      api.change({ ...api.peek(), notified: ['another-window'] });
+      const draft = { ...store.read().settings, name };
+      const saved = await store.update((state) => {
+        assertSettingsUnchanged(state.settings, baseline);
+        return { ...state, settings: draft };
+      });
+      baseline = settingsEditBaseline(saved.settings);
+      assert.equal(api.peek().settings.name, name);
+      assert.deepEqual(api.peek().notified, ['another-window']);
+    }
+  }
+});
+test('Stale goal edits cannot reverse completed tasks or restore a deleted goal', async () => {
+  for (const remoteChange of [
+    (state) => recordProgress(state, state.tasks[0].id, true, 0, false),
+    (state) => ({
+      ...state,
+      tasks: state.tasks.filter((task) => task.id !== state.tasks[0].id),
+    }),
+    (state) => ({
+      ...state,
+      goals: state.goals.map((goal, index) =>
+        index === 0 ? { ...goal, title: 'Changed elsewhere' } : goal,
+      ),
+    }),
+    (state) => ({
+      ...state,
+      goals: state.goals.slice(1),
+      tasks: state.tasks.filter((task) => task.goalId !== state.goals[0].id),
+    }),
+  ]) {
+    const seed = exampleState(initialState());
+    const api = host(seed);
+    const store = createAnnaStateStore(api, () => {});
+    await store.refresh();
+    const goal = structuredClone(seed.goals[0]);
+    const tasks = structuredClone(
+      seed.tasks.filter((task) => task.goalId === goal.id),
+    );
+    const baseline = goalEditBaseline(store.read(), goal.id);
+    api.change(remoteChange(api.peek()));
+    await store.refresh();
+    const before = api.peek();
+    await assert.rejects(
+      store.update((state) => {
+        assertGoalUnchanged(state, goal.id, baseline);
+        return {
+          ...state,
+          goals: [...state.goals.filter((item) => item.id !== goal.id), goal],
+          tasks: [
+            ...state.tasks.filter((task) => task.goalId !== goal.id),
+            ...tasks,
+          ],
+        };
+      }),
+      EditConflictError,
+    );
+    assert.deepEqual(api.peek(), before);
+    assert.equal(api.writes, 0);
+    assert.equal(tasks[0].status, 'todo');
+  }
+});
+test('A goal edit permits unrelated changes and captures a new baseline only after success', async () => {
+  const seed = exampleState(initialState());
+  const api = host(seed);
+  const store = createAnnaStateStore(api, () => {});
+  await store.refresh();
+  const goalId = seed.goals[0].id;
+  let baseline = goalEditBaseline(store.read(), goalId);
+  api.change({
+    ...api.peek(),
+    settings: { ...seed.settings, focusMinutes: 50 },
+    goals: seed.goals.map((goal, index) =>
+      index === 1 ? { ...goal, title: 'Other goal updated' } : goal,
+    ),
+  });
+  for (const title of ['First title', 'Second title']) {
+    const saved = await store.update((state) => {
+      assertGoalUnchanged(state, goalId, baseline);
+      return {
+        ...state,
+        goals: state.goals.map((goal) =>
+          goal.id === goalId ? { ...goal, title } : goal,
+        ),
+      };
+    });
+    baseline = goalEditBaseline(saved, goalId);
+    assert.equal(api.peek().goals[0].title, title);
+    assert.equal(api.peek().goals[1].title, 'Other goal updated');
+    assert.equal(api.peek().settings.focusMinutes, 50);
+  }
 });
 test('Conflict and quota errors never produce a successful local commit; later operations recover', async () => {
   const seed = initialState();
@@ -247,4 +390,47 @@ test('ANNA adapter uses the actual MCP completion shape, localized prompts and a
     stopReason: 'maxTokens',
   });
   assert.equal((await agentRequest(options)).status, 400);
+});
+test('ANNA saves preserve localized edit conflict messages and never replace remote data', async () => {
+  const api = host(exampleState(initialState()));
+  installAnnaRuntime({
+    storage: api,
+    capabilities: { scopes: ['storage.get', 'storage.set'] },
+    on: () => () => {},
+    llm: { complete: async () => ({}) },
+  });
+  await initializeState();
+  const original = api.peek();
+  const settingsBaseline = settingsEditBaseline(original.settings);
+  const goalId = original.goals[0].id;
+  const goalBaseline = goalEditBaseline(original, goalId);
+  api.change({
+    ...original,
+    settings: { ...original.settings, focusMinutes: 50 },
+    tasks: original.tasks.map((task, index) =>
+      index === 0 ? { ...task, status: 'done', remaining: 0 } : task,
+    ),
+  });
+  const before = api.peek();
+  for (const check of [
+    (state) => assertSettingsUnchanged(state.settings, settingsBaseline),
+    (state) => assertGoalUnchanged(state, goalId, goalBaseline),
+  ]) {
+    await assert.rejects(
+      atomicUpdate((state) => {
+        check(state);
+        return original;
+      }),
+      (error) => {
+        assert.match(error.message, /草稿仍保留/);
+        const english = translate(error.message, 'en');
+        assert.match(english, /Your changes were not saved/);
+        assert.doesNotMatch(english, /[\u3400-\u9fff]/);
+        assert.equal(translate(english, 'zh-CN'), error.message);
+        return true;
+      },
+    );
+  }
+  assert.deepEqual(api.peek(), before);
+  assert.equal(api.writes, 0);
 });

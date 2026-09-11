@@ -1,6 +1,10 @@
 // Chinese source keys preserve compatibility with existing saved system messages.
 // Keep numbered placeholders identical in both languages. User-authored content is never translated.
 export const messages: Record<string, string> = {
+  '偏好已在其他窗口或设备更新，本次修改未保存。草稿仍保留，请记下修改后重新打开设置，查看最新内容。':
+    'Preferences changed in another window or device. Your changes were not saved, and your draft is still here. Note your edits, then reopen Settings to review the latest preferences.',
+  '此目标或任务已在其他窗口或设备更新或删除，本次修改未保存。草稿仍保留，请记下修改后关闭编辑器，查看最新目标再编辑。':
+    'This goal or its tasks changed or were deleted in another window or device. Your changes were not saved, and your draft is still here. Note your edits, close the editor, and review the latest goal before editing again.',
   '反馈保存在你的 ANNA 应用数据中，可以导出分享，不会自动发送给开发者。': 'Feedback is saved in your ANNA App data and can be exported. It is not automatically sent to the developer.',
   'ANNA 数据暂不可用': 'ANNA data is temporarily unavailable',
   '重新加载': 'Reload',

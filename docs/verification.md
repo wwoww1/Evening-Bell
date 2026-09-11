@@ -1,5 +1,16 @@
 # Verification
 
+## ANNA release review — 2026-09-09
+
+- All 71 regression tests passed after the stale-edit fixes, including five new tests for concurrent settings/goal edits and localized conflict messages.
+- TypeScript and source lint checks passed; changed application files were checked again after the fixes.
+- Both the standalone production Worker build and ANNA static build passed. The final ANNA bundle contains five files and is about 838 KiB; Vite reports a non-failing chunk-size advisory.
+- Official ANNA CLI strict validation passed.
+- The remote GitHub README cleanup was merged locally without discarding the current documentation. Source fixes and release notes still need committing and pushing.
+- The CLI reports no signed-in accounts. Real model calls, production APS storage, Marketplace installation, browser/phone interaction, upload, review, and public release remain unverified.
+
+The existing local legacy-runtime HTTP/RPC result from September 7 was not rerun for these edit guards. It covers host handshake, SDK/assets, storage round trips and permission rejection, but does not establish production APS or real-account behavior. See [the release and competition checklist](ANNA-RELEASE-CHECKLIST.zh-CN.md) for remaining steps and known capacity/first-write limitations.
+
 Run from the repository root:
 
 ```sh

@@ -5,6 +5,7 @@ import type { AppState } from './model.ts';
 import { restoreState } from './persistence.ts';
 import { getAnnaRuntime, isAnna, annaError } from './anna-runtime.ts';
 import { createAnnaStateStore } from './anna-storage.ts';
+import { EditConflictError } from './editing.ts';
 const KEY = 'afterhours.state.v1';
 let memory: AppState | undefined;
 let saveError = '';
@@ -54,7 +55,9 @@ export async function atomicUpdate(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     saveError =
-      isAnna() && !message.includes('240 KiB')
+      isAnna() &&
+      !(error instanceof EditConflictError) &&
+      !message.includes('240 KiB')
         ? annaError(
             error,
             document.documentElement.lang === 'zh-CN' ? 'zh-CN' : 'en',

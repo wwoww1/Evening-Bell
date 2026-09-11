@@ -28,6 +28,7 @@ import { Field, Check } from './controls';
 import { atomicUpdate, rawBackup } from '@/lib/store';
 import { initialState } from '@/lib/model';
 import type { AppState, Settings } from '@/lib/model';
+import { assertSettingsUnchanged, settingsEditBaseline } from '@/lib/editing';
 export function downloadJSON(content: string, name: string) {
   const url = URL.createObjectURL(
     new Blob([content], { type: 'application/json' }),
@@ -49,6 +50,7 @@ export function SettingsView({
   const [s, setS] = useState<Settings>({ ...state.settings }),
     [remove, setRemove] = useState(false),
     [error, setError] = useState('');
+  const settingsBaseline = useRef(settingsEditBaseline(state.settings));
   const importFile = useRef<HTMLInputElement>(null);
   const [imported, setImported] = useState<AppState | null>(null);
   const [importBusy, setImportBusy] = useState(false);
@@ -106,7 +108,12 @@ export function SettingsView({
         return;
       }
     }
-    await atomicUpdate((old) => ({ ...old, settings: s }));
+    const baseline = settingsBaseline.current;
+    const saved = await atomicUpdate((old) => {
+      assertSettingsUnchanged(old.settings, baseline);
+      return { ...old, settings: s };
+    });
+    settingsBaseline.current = settingsEditBaseline(saved.settings);
     onNotice(tr('偏好已保存，将用于下一次规划。'));
   }
   const toggle = (
@@ -414,8 +421,11 @@ export function SettingsView({
               variant="destructive"
               onClick={() =>
                 void report(async () => {
-                  await atomicUpdate(() => initialState());
-                  setS(initialState().settings);
+                  const saved = await atomicUpdate(() => initialState());
+                  settingsBaseline.current = settingsEditBaseline(
+                    saved.settings,
+                  );
+                  setS({ ...saved.settings });
                   setRemove(false);
                   onNotice(
                     tr(isAnna() ? 'ANNA 应用记录已清除。' : '本地记录已清除。'),
@@ -459,8 +469,11 @@ export function SettingsView({
                 if (!imported) return;
                 setImportBusy(true);
                 void report(async () => {
-                  await atomicUpdate(() => imported);
-                  setS({ ...imported.settings });
+                  const saved = await atomicUpdate(() => imported);
+                  settingsBaseline.current = settingsEditBaseline(
+                    saved.settings,
+                  );
+                  setS({ ...saved.settings });
                   setImported(null);
                   onNotice(tr('备份已导入。'));
                 }).finally(() => setImportBusy(false));

@@ -1,7 +1,7 @@
 'use client';
 import { agentRequest } from '@/lib/agent-client';
 import { useI18n } from '@/components/planner/language-provider';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Plus, Sparkles, Trash2, GitMerge, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,7 @@ import type { AppState, Goal, Task, Energy, TaskStatus } from '@/lib/model';
 import { validateTasks } from '@/lib/scheduler';
 import { localDecompose, validateDraftTasks } from '@/lib/agent';
 import { atomicUpdate } from '@/lib/store';
+import { assertGoalUnchanged, goalEditBaseline } from '@/lib/editing';
 
 export function GoalEditor({
   state,
@@ -48,6 +49,9 @@ export function GoalEditor({
           .filter((t) => t.goalId === goal.id)
           .map((t) => ({ ...t, dependsOn: [...t.dependsOn] }))
       : [],
+  );
+  const goalBaseline = useRef(
+    goal ? goalEditBaseline(state, goal.id) : undefined,
   );
   const [source, setSource] = useState(''),
     [busy, setBusy] = useState(false),
@@ -188,7 +192,10 @@ export function GoalEditor({
         title: t.title.trim(),
         remaining: t.status === 'done' ? 0 : t.remaining,
       }));
-      await atomicUpdate((current) => {
+      const baseline = goalBaseline.current;
+      const saved = await atomicUpdate((current) => {
+        if (baseline !== undefined)
+          assertGoalUnchanged(current, draft.id, baseline);
         if (
           current.timer &&
           current.tasks.find((t) => t.id === current.timer?.taskId)?.goalId ===
@@ -230,6 +237,7 @@ export function GoalEditor({
           previousPlan: null,
         };
       });
+      goalBaseline.current = goalEditBaseline(saved, draft.id);
       onSaved(tr('计划已保存，可以安排今晚了。'));
       onClose();
     } catch (e) {
