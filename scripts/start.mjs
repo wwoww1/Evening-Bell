@@ -17,12 +17,15 @@ if (!existsSync(cli)) {
   process.exit(1);
 }
 console.log(
-  'Starting Evening Bell. Open the Local URL below and keep this window open.',
+  'Starting Evening Bell. Your browser will open when ready. Keep this window open.',
 );
 const child = spawn(process.execPath, [cli, 'dev'], {
   cwd: root,
   stdio: 'inherit',
-  env: process.env,
+  env: {
+    ...process.env,
+    EVENING_BELL_OPEN_BROWSER: process.env.EVENING_BELL_NO_OPEN === '1' ? '0' : '1',
+  },
 });
 child.on('error', (error) => {
   console.error(error.message);

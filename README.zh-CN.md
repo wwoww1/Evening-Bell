@@ -18,7 +18,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-打开终端显示的 Local 地址，通常是 http://localhost:3000。首次安装依赖后，Windows 也可以双击 **start.cmd** 或 **启动.cmd**，使用时保持启动窗口开启。
+打开终端显示的 Local 地址，通常是 http://localhost:3000。首次安装依赖后，Windows 也可以双击 **start.cmd** 或 **启动.cmd**。启动器会从 PATH、常见安装目录及本机已有的 Codex 工作区运行环境查找 Node.js，服务就绪后自动打开浏览器。使用时保持启动窗口开启；如果启动失败，先查看窗口中的错误提示，再按键关闭。
 
 生产构建和本地运行：
 

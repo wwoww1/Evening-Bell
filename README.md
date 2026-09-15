@@ -20,7 +20,7 @@ pnpm dev
 
 Run these commands in the repository root, alongside package.json. Open the Local URL printed by the server, usually http://localhost:3000.
 
-On Windows, after installing dependencies, double-click **start.cmd**. The Chinese **启动.cmd** launcher is also available. Keep the server window open while using the app.
+On Windows, after installing dependencies, double-click **start.cmd** or **启动.cmd**. The launcher looks for Node.js on PATH, in standard installation folders, and in the installed Codex workspace runtime. It opens your browser when the server is ready. Keep the server window open while using the app. If startup fails, the window shows the error before asking you to close it.
 
 For a production build running locally:
 

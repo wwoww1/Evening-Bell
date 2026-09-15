@@ -6,5 +6,10 @@
   "description": "Evening Bell helps you make progress on personal goals with realistic daily plans, task-linked Pomodoro sessions, recurring habits, a deadline calendar, and gentle AI support.\n\nCheck in with the time and energy you actually have. Review and accept the proposed schedule before anything changes. The local scheduler enforces task dependencies, fixed commitments, breaks, and time limits. Focus time and confirmed task completion are recorded separately.\n\nANNA provides optional AI task breakdown, ordering suggestions, and coaching using your configured model and quota. Core planning and focus features work without model access. Plans and records are stored in your per-user ANNA App storage. English and Simplified Chinese are supported.\n\nThe app must remain open for timely reminders. It does not provide guaranteed background notifications. Storage and AI require an ANNA connection. Backups can be exported and explicitly imported in Settings. Feedback stays in your app data and is not sent to the developer. See the included privacy notice for details.",
   "category": "productivity",
   "privacy_url": "https://wwoww1.github.io/Evening-Bell/privacy.html",
+  "screenshots": [
+    "https://wwoww1.github.io/Evening-Bell/screenshots/01-today.png",
+    "https://wwoww1.github.io/Evening-Bell/screenshots/02-plans.png",
+    "https://wwoww1.github.io/Evening-Bell/screenshots/03-focus.png"
+  ],
   "pricing_model": "free"
 }

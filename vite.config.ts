@@ -47,6 +47,7 @@ export default defineConfig(async () => {
   return {
     css: { postcss: { plugins: [tailwindcss()] } },
     server: {
+      open: process.env.EVENING_BELL_OPEN_BROWSER === '1',
       watch: {
         ...(isCodexSeatbeltSandbox
           ? { useFsEvents: false, usePolling: true }
