@@ -9,6 +9,6 @@ English replacements captured on 2026-09-18 from the current standalone web inte
 
 The sample session used local planning and browser storage. These images demonstrate the shared application interface; they do not document real ANNA model calls or production ANNA storage testing.
 
-`anna/app.json` now references the three `-en.jpg` filenames under `https://wwoww1.github.io/Evening-Bell/screenshots/`. These replacements are prepared locally: publishing the files to GitHub Pages and updating the ANNA listing are still required. New filenames avoid reusing cached Chinese screenshots.
+`anna/app.json` references the three `-en.jpg` filenames under `https://wwoww1.github.io/Evening-Bell/screenshots/`. On 2026-09-18 these replacements were published to GitHub Pages and saved to the ANNA listing. Public image hashes match the local files, and the remote listing references were read back and verified. New filenames avoid reusing cached Chinese screenshots.
 
 The older Chinese `01-today.png`, `02-plans.png`, and `03-focus.png` remain as historical assets and are no longer referenced by the local listing configuration.
