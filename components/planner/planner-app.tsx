@@ -58,10 +58,11 @@ import { GoalEditor } from './goal-editor';
 import { SettingsView, downloadJSON } from './settings-view';
 import { RecordsView } from './records-view';
 import { HabitsView } from './habits-view';
+import { TodayHabits } from './today-habits';
 import { CalendarView } from './calendar-view';
 import { FeedbackDialog } from './feedback-dialog';
 import { NotificationCenter } from './notification-center';
-import { tasksForDay } from '@/lib/habits';
+import { tasksForDay, dailyHabitTasks } from '@/lib/habits';
 import {
   addNotification,
   syncDeadlines,
@@ -71,6 +72,7 @@ import {
   acceptDailyPlan,
   planningCandidates,
   validatePlanningAdvice,
+  habitScheduleSummary,
 } from '@/lib/planning';
 import type { PlanningAdvice } from '@/lib/scheduler';
 import { Field, Choice, Check, energyOptions } from './controls';
@@ -108,7 +110,12 @@ import {
 } from '@/lib/timer';
 
 import { LanguageSwitcher } from './language-switcher';
-import { currentPlan, startFocus, recordProgress } from '@/lib/actions';
+import {
+  currentPlan,
+  startFocus,
+  recordProgress,
+  completeHabitForDay,
+} from '@/lib/actions';
 
 const nav = [
   { icon: Sun, label: '今天', key: 'today' },
@@ -589,9 +596,24 @@ export default function PlannerApp() {
   async function accept() {
     if (!preview) return;
     await safely(async () => {
-      await atomicUpdate((old) => acceptDailyPlan(old, preview));
+      const saved = await atomicUpdate((old) => acceptDailyPlan(old, preview));
+      const habits = habitScheduleSummary(saved, preview);
       setPreview(null);
-      setNotice(tr('今晚的安排已采纳。先从眼前的一小步开始。'));
+      setView('today');
+      setNotice(
+        habits.total
+          ? tr('安排已采纳，已完整安排 {0}/{1} 项习惯。', [
+              habits.scheduled,
+              habits.total,
+            ]) +
+              (habits.remainingTitles.length
+                ? ' ' +
+                  tr('尚未排满：{0}。请增加可用时间或调整安排。', [
+                    habits.remainingTitles.join(tr('、')),
+                  ])
+                : '')
+          : tr('今晚的安排已采纳。先从眼前的一小步开始。'),
+      );
     });
   }
   async function start(task: Task, block?: Block, force = false) {
@@ -705,10 +727,13 @@ export default function PlannerApp() {
       : state.settings.focusMinutes * MINUTE;
   const clock = `${String(Math.floor(Math.ceil(remainingMs / 1000) / 60)).padStart(2, '0')}:${String(Math.ceil(remainingMs / 1000) % 60).padStart(2, '0')}`;
   const todayPlan = currentPlan(state, now);
+  const previewHabits = preview ? habitScheduleSummary(state, preview) : null;
+  const todayDate = todayPlan?.date || localDate(new Date(now));
+  const todayHabits = dailyHabitTasks(state, todayDate);
   const timerTask = state.tasks.find((t) => t.id === timer?.taskId);
   const hasWork =
     state.tasks.some((t) => !t.habitId && activeTask(t)) ||
-    state.habits.some((h) => h.enabled);
+    todayHabits.some(activeTask);
   let risks: ReturnType<typeof capacityRisks> = [];
   try {
     risks = capacityRisks(
@@ -1007,7 +1032,21 @@ export default function PlannerApp() {
                       </span>
                     </div>
                   </div>
-                  {!todayPlan ? (
+                  <TodayHabits
+                    state={state}
+                    date={todayDate}
+                    tasks={todayHabits}
+                    onSchedule={openCheckin}
+                    onComplete={(task) =>
+                      void safely(async () => {
+                        await atomicUpdate((s) =>
+                          completeHabitForDay(s, task.habitId!, todayDate),
+                        );
+                        setNotice(tr('{0}：今天已完成。', [task.title]));
+                      })
+                    }
+                  />
+                  {!todayPlan && todayHabits.length ? null : !todayPlan ? (
                     <div className="empty-state">
                       <Target />
                       <h3>
@@ -1594,7 +1633,10 @@ export default function PlannerApp() {
             <HabitsView
               state={state}
               onNotice={setNotice}
-              onSchedule={openCheckin}
+              onSchedule={() => {
+                setView('today');
+                openCheckin();
+              }}
             />
           )}
           {view === 'calendar' && (
@@ -1852,6 +1894,29 @@ export default function PlannerApp() {
                   ])
                 : ''}
             </p>
+            {!!previewHabits?.total && (
+              <div
+                className={
+                  previewHabits.remainingTitles.length
+                    ? 'alert warning'
+                    : 'alert success'
+                }
+              >
+                <p>
+                  {tr('本次预览已完整安排 {0}/{1} 项习惯；点击采纳后保存。', [
+                    previewHabits.scheduled,
+                    previewHabits.total,
+                  ])}
+                </p>
+                {previewHabits.remainingTitles.length > 0 && (
+                  <p>
+                    {tr('尚未排满：{0}。请增加可用时间或调整安排。', [
+                      previewHabits.remainingTitles.join(tr('、')),
+                    ])}
+                  </p>
+                )}
+              </div>
+            )}
             {preview.blocks.map((b) => (
               <div key={b.id} className="preview-block">
                 <div className="section-heading">

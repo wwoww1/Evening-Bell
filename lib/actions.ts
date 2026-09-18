@@ -2,7 +2,7 @@ import { activeTask, localDate, MINUTE } from './model.ts';
 import type { AppState, Plan } from './model.ts';
 import { clockInWindow, windowFor } from './scheduler.ts';
 import { createTimer, settleTimer } from './timer.ts';
-import { isHabitDay } from './habits.ts';
+import { isHabitDay, materializeHabits, habitTaskId } from './habits.ts';
 
 export function currentPlan(state: AppState, now = Date.now()): Plan | null {
   const p = state.plan;
@@ -10,6 +10,30 @@ export function currentPlan(state: AppState, now = Date.now()): Plan | null {
     (p.date === localDate(new Date(now)) || windowFor(p.checkin)[1] > now)
     ? p
     : null;
+}
+export function completeHabitForDay(
+  state: AppState,
+  habitId: string,
+  date: string,
+  now = Date.now(),
+): AppState {
+  const habit = state.habits.find((item) => item.id === habitId);
+  const currentDate = currentPlan(state, now)?.date || localDate(new Date(now));
+  if (date !== currentDate || !habit || !isHabitDay(habit, date))
+    throw new Error('这个习惯未在今天启用，请使用今天的习惯记录。');
+  const taskId = habitTaskId(habitId, date);
+  if (state.tasks.find((task) => task.id === taskId)?.status === 'done')
+    return state;
+  if (state.timer) throw new Error('请先结束当前计时。');
+  return recordProgress(
+    materializeHabits(state, date),
+    taskId,
+    true,
+    0,
+    false,
+    false,
+    now,
+  );
 }
 export function startFocus(
   state: AppState,

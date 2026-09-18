@@ -1,8 +1,33 @@
-import { activeTask } from './model.ts';
+import { activeTask, MINUTE } from './model.ts';
 import type { AppState, Checkin, Plan } from './model.ts';
 import { materializeHabits, tasksForDay, habitSignature } from './habits.ts';
 import { validatePlan } from './scheduler.ts';
 import type { PlanningAdvice } from './scheduler.ts';
+
+export function habitScheduleSummary(state: AppState, plan: Plan) {
+  const habits = planningCandidates(state, plan.checkin).filter(
+    (task) => task.kind === 'habit',
+  );
+  const remainingTitles = habits
+    .filter((task) => {
+      const minutes = plan.blocks
+        .filter(
+          (block) =>
+            block.type === 'focus' && !block.done && block.taskId === task.id,
+        )
+        .reduce(
+          (total, block) => total + (block.end - block.start) / MINUTE,
+          0,
+        );
+      return minutes + 0.01 < task.remaining;
+    })
+    .map((task) => task.title);
+  return {
+    total: habits.length,
+    scheduled: habits.length - remainingTitles.length,
+    remainingTitles,
+  };
+}
 
 export function planningCandidates(state: AppState, checkin: Checkin) {
   const daily = materializeHabits(state, checkin.date);

@@ -2,6 +2,30 @@ import type { AppState } from './model.ts';
 import { initialState } from './model.ts';
 import { restoreState } from './persistence.ts';
 import type { AnnaStorage } from './anna-runtime.ts';
+import { annaError } from './anna-runtime.ts';
+
+/** Only host I/O failures are connection/permission errors; updater errors are local validation. */
+export class AnnaStorageError extends Error {
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : String(cause), { cause });
+    this.name = 'AnnaStorageError';
+  }
+}
+export function storageErrorMessage(error: unknown, locale: 'en' | 'zh-CN') {
+  return error instanceof AnnaStorageError
+    ? annaError(error.cause, locale)
+    : error instanceof Error
+      ? error.message
+      : String(error);
+}
+
+async function hostRequest<T>(request: () => Promise<T>): Promise<T> {
+  try {
+    return await request();
+  } catch (error) {
+    throw new AnnaStorageError(error);
+  }
+}
 
 export const ANNA_STATE_KEY = 'evening-bell/state-v1';
 // Keep below both APS's per-value and the legacy harness's total-state cap.
@@ -21,7 +45,9 @@ export function createAnnaStateStore(
     return next;
   };
   async function load() {
-    const current = await storage.get({ key: ANNA_STATE_KEY });
+    const current = await hostRequest(() =>
+      storage.get({ key: ANNA_STATE_KEY }),
+    );
     // Legacy harness has no `exists`; production APS does, including stored null.
     const exists =
       current.exists ?? (current.value !== null && current.value !== undefined);
@@ -52,11 +78,13 @@ export function createAnnaStateStore(
             'Data exceeds 240 KiB. Export a backup and reduce old records before saving. / 数据超过 240 KiB，请先导出备份并精简旧记录，再保存。',
           );
         }
-        await storage.set({
-          key: ANNA_STATE_KEY,
-          value: next,
-          ...(current.etag ? { if_match: current.etag } : {}),
-        });
+        await hostRequest(() =>
+          storage.set({
+            key: ANNA_STATE_KEY,
+            value: next,
+            ...(current.etag ? { if_match: current.etag } : {}),
+          }),
+        );
         // No optimistic UI success and no automatic retries of an ambiguous write.
         backup = raw;
         state = next;

@@ -68,6 +68,13 @@ export function tasksForDay(state: AppState, date: string): Task[] {
         state.habits.some((h) => h.id === t.habitId && isHabitDay(h, date))),
   );
 }
+// Derive today's checklist even before a schedule has been generated or accepted.
+// Reading the checklist does not create persisted tasks or change existing plans.
+export function dailyHabitTasks(state: AppState, date: string): Task[] {
+  return tasksForDay(materializeHabits(state, date), date).filter(
+    (task) => !!task.habitId && task.status !== 'cancelled',
+  );
+}
 export function habitBudget(state: AppState, date: string): number {
   return (state.habits || [])
     .filter((h) => isHabitDay(h, date))

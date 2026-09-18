@@ -1,15 +1,16 @@
 {
   "slug": "ai-planning-companion",
-  "name": "Evening Bell · 晚钟",
-  "version": "0.2.0",
+  "name": "Evening Bell",
+  "version": "0.2.1",
+  "changelog": "Start Pomodoro sessions anytime, browse daily focus records and add notes. Show due habits on Today, make schedule inclusion explicit, and preserve actionable validation errors when starting focus. Replace listing screenshots with English versions.",
   "tagline": "Plan around your time and energy, focus with a Pomodoro timer, and build daily habits.",
-  "description": "Evening Bell helps you make progress on personal goals with realistic daily plans, task-linked Pomodoro sessions, recurring habits, a deadline calendar, and gentle AI support.\n\nCheck in with the time and energy you actually have. Review and accept the proposed schedule before anything changes. The local scheduler enforces task dependencies, fixed commitments, breaks, and time limits. Focus time and confirmed task completion are recorded separately.\n\nANNA provides optional AI task breakdown, ordering suggestions, and coaching using your configured model and quota. Core planning and focus features work without model access. Plans and records are stored in your per-user ANNA App storage. English and Simplified Chinese are supported.\n\nThe app must remain open for timely reminders. It does not provide guaranteed background notifications. Storage and AI require an ANNA connection. Backups can be exported and explicitly imported in Settings. Feedback stays in your app data and is not sent to the developer. See the included privacy notice for details.",
+  "description": "Evening Bell helps you make progress on personal goals with realistic daily plans, anytime Pomodoro sessions, recurring habits, a deadline calendar, and gentle AI support.\n\nStart a Pomodoro whenever you are ready, without setting a schedule. Browse focus records by day, see when you focused, and add notes about what you worked on. Today's habits appear automatically on their repeat days, with options to mark them complete or schedule a time slot.\n\nFor a daily plan, check in with the time and energy you actually have. Review and accept the proposed schedule before anything changes. The local scheduler enforces task dependencies, fixed commitments, breaks, and time limits. Focus time and confirmed task completion are recorded separately.\n\nANNA provides optional AI task breakdown, ordering suggestions, and coaching using your configured model and quota. Core planning and focus features work without model access. Plans and records are stored in your per-user ANNA App storage. English and Simplified Chinese are supported.\n\nThe app must remain open for timely reminders. It does not provide guaranteed background notifications. Storage and AI require an ANNA connection. Backups can be exported and explicitly imported in Settings. Feedback stays in your app data and is not sent to the developer. See the included privacy notice for details.",
   "category": "productivity",
   "privacy_url": "https://wwoww1.github.io/Evening-Bell/privacy.html",
   "screenshots": [
-    "https://wwoww1.github.io/Evening-Bell/screenshots/01-today.png",
-    "https://wwoww1.github.io/Evening-Bell/screenshots/02-plans.png",
-    "https://wwoww1.github.io/Evening-Bell/screenshots/03-focus.png"
+    "https://wwoww1.github.io/Evening-Bell/screenshots/01-today-en.jpg",
+    "https://wwoww1.github.io/Evening-Bell/screenshots/02-plans-en.jpg",
+    "https://wwoww1.github.io/Evening-Bell/screenshots/03-focus-en.jpg"
   ],
   "pricing_model": "free"
 }

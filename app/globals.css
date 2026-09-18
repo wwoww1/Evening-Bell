@@ -82,6 +82,41 @@
 .habit-card {
   transition: opacity 0.2s;
 }
+.today-habits {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f7f9fd;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.today-habits > .muted,
+.today-habit-row p {
+  font-size: 12px;
+}
+.today-habit-list {
+  margin-top: 8px;
+}
+.today-habit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 0;
+}
+.today-habit-row + .today-habit-row {
+  border-top: 1px solid var(--border);
+}
+.today-habit-row > div {
+  flex: 1;
+  min-width: 140px;
+  overflow-wrap: anywhere;
+}
+.today-habit-row h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
 .habit-paused {
   background: #f9fafc;
 }

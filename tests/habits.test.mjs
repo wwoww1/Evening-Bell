@@ -8,14 +8,22 @@ import {
   saveHabit,
   removeHabit,
   habitBudget,
+  dailyHabitTasks,
 } from '../lib/habits.ts';
 import { generatePlan, validatePlan, capacityRisks } from '../lib/scheduler.ts';
 import {
   acceptDailyPlan,
   planningCandidates,
   validatePlanningAdvice,
+  habitScheduleSummary,
 } from '../lib/planning.ts';
-import { recordProgress, startFocus, currentPlan } from '../lib/actions.ts';
+import {
+  recordProgress,
+  startFocus,
+  currentPlan,
+  completeHabitForDay,
+} from '../lib/actions.ts';
+import { startPomodoro } from '../lib/timer.ts';
 import {
   addNotification,
   syncDeadlines,
@@ -61,6 +69,158 @@ function fixture() {
   return s;
 }
 const todayId = habitTaskId('exercise', date);
+
+test('习惯未能排入或只排入一部分时，预览和采纳摘要不会误报已全部安排', () => {
+  const s = fixture();
+  const short = { ...s.checkin, end: '20:15' };
+  const omitted = generatePlan(s, short, now);
+  assert.deepEqual(habitScheduleSummary(s, omitted), {
+    total: 1,
+    scheduled: 0,
+    remainingTitles: ['锻炼'],
+  });
+  s.habits[0].splittable = true;
+  const partial = generatePlan(s, short, now);
+  assert.ok(partial.blocks.some((block) => block.type === 'focus'));
+  assert.deepEqual(habitScheduleSummary(s, partial), {
+    total: 1,
+    scheduled: 0,
+    remainingTitles: ['锻炼'],
+  });
+  const full = generatePlan(s, s.checkin, now);
+  assert.deepEqual(habitScheduleSummary(s, full), {
+    total: 1,
+    scheduled: 1,
+    remainingTitles: [],
+  });
+});
+
+test('新建习惯无需报到或采纳计划即可出现在 Today，读取不会写入任务', () => {
+  const s = fixture();
+  const running = { ...s.habits[0], id: 'running', title: '跑步' };
+  const saved = saveHabit({ ...s, habits: [] }, running);
+  const snapshot = JSON.stringify(saved);
+  assert.equal(saved.plan, null);
+  assert.equal(saved.tasks.length, 0);
+  assert.deepEqual(
+    dailyHabitTasks(saved, date).map((task) => task.title),
+    ['跑步'],
+  );
+  assert.equal(
+    dailyHabitTasks(saved, date)[0].id,
+    habitTaskId('running', date),
+  );
+  assert.equal(JSON.stringify(saved), snapshot);
+});
+
+test('已有计划后新增习惯立即可见，原时间块和锁定安排不被重排', () => {
+  const s = fixture();
+  const planned = acceptDailyPlan(s, generatePlan(s, s.checkin, now));
+  planned.plan.blocks[0].locked = true;
+  const saved = saveHabit(planned, {
+    ...s.habits[0],
+    id: 'running',
+    title: '跑步',
+  });
+  assert.deepEqual(saved.plan.blocks, planned.plan.blocks);
+  assert.deepEqual(
+    dailyHabitTasks(saved, date).map((task) => task.title),
+    ['锻炼', '跑步'],
+  );
+  assert.equal(
+    dailyHabitTasks(saved, date).filter((task) => task.id === todayId).length,
+    1,
+  );
+  const replanned = acceptDailyPlan(
+    saved,
+    generatePlan(saved, saved.checkin, now),
+  );
+  assert.equal(
+    replanned.plan.blocks.filter(
+      (block) => block.taskId === habitTaskId('running', date),
+    ).length,
+    1,
+  );
+  assert.equal(dailyHabitTasks(replanned, date).length, 2);
+});
+
+test('Today 清单遵守重复日期、暂停、重新启用和删除，并立即反映编辑', () => {
+  const s = fixture();
+  const edited = saveHabit(s, {
+    ...s.habits[0],
+    title: '跑步',
+    minutes: 45,
+    days: [6],
+  });
+  assert.equal(dailyHabitTasks(edited, date)[0].remaining, 45);
+  assert.equal(dailyHabitTasks(edited, date)[0].title, '跑步');
+  assert.deepEqual(dailyHabitTasks(edited, '2026-09-06'), []);
+  const paused = saveHabit(edited, { ...edited.habits[0], enabled: false });
+  assert.deepEqual(dailyHabitTasks(paused, date), []);
+  const enabled = saveHabit(paused, { ...paused.habits[0], enabled: true });
+  assert.equal(dailyHabitTasks(enabled, date).length, 1);
+  assert.deepEqual(dailyHabitTasks(removeHabit(enabled, 'exercise'), date), []);
+});
+
+test('Today 未排程习惯可直接打卡，刷新后保留且第二天恢复待办', () => {
+  const s = fixture();
+  const done = completeHabitForDay(s, 'exercise', date, now);
+  const restored = restoreState(JSON.stringify(done));
+  assert.equal(restored.plan, null);
+  assert.equal(restored.sessions.length, 0);
+  assert.equal(dailyHabitTasks(restored, date)[0].status, 'done');
+  assert.equal(completeHabitForDay(restored, 'exercise', date, now), restored);
+  const nextDay = dailyHabitTasks(restored, '2026-09-06');
+  assert.equal(nextDay[0].status, 'todo');
+  assert.equal(nextDay[0].remaining, 30);
+  assert.equal(restored.tasks.length, 1);
+});
+
+test('计时中新增习惯仍显示在 Today，打卡不会误结束当前番茄钟', () => {
+  const s = fixture();
+  const running = startPomodoro(s, now);
+  const saved = saveHabit(running, {
+    ...s.habits[0],
+    id: 'reading',
+    title: '阅读',
+  });
+  assert.equal(dailyHabitTasks(saved, date).length, 2);
+  assert.deepEqual(saved.timer, running.timer);
+  assert.throws(() => completeHabitForDay(saved, 'reading', date, now), /计时/);
+  assert.deepEqual(saved.sessions, []);
+});
+
+test('旧 Today 页面不能打卡已暂停、已删除或已过期的习惯', () => {
+  const s = materializeHabits(fixture(), date);
+  for (const changed of [
+    saveHabit(s, { ...s.habits[0], enabled: false }),
+    removeHabit(s, 'exercise'),
+  ])
+    assert.throws(
+      () => completeHabitForDay(changed, 'exercise', date, now),
+      /今天/,
+    );
+  assert.throws(
+    () => completeHabitForDay(s, 'exercise', date, at('2026-09-06', '08:00')),
+    /今天/,
+  );
+});
+
+test('跨午夜活动计划的 Today 沿用原日期习惯，计划结束后显示新一天', () => {
+  const s = fixture();
+  s.checkin = { ...s.checkin, start: '23:00', end: '01:00', nextDay: true };
+  const daily = acceptDailyPlan(
+    s,
+    generatePlan(s, s.checkin, at(date, '23:00')),
+  );
+  const midnight = at('2026-09-06', '00:10');
+  const activeDate = currentPlan(daily, midnight).date;
+  assert.equal(dailyHabitTasks(daily, activeDate)[0].id, todayId);
+  const done = completeHabitForDay(daily, 'exercise', activeDate, midnight);
+  assert.equal(dailyHabitTasks(done, activeDate)[0].status, 'done');
+  assert.equal(currentPlan(done, at('2026-09-06', '08:00')), null);
+  assert.equal(dailyHabitTasks(done, '2026-09-06')[0].status, 'todo');
+});
 test('习惯预览不写入状态；多次预览及采纳使用同一天唯一实例', () => {
   const s = fixture(),
     p = generatePlan(s, s.checkin, now),

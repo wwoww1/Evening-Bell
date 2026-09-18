@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
-import { initialState, exampleState } from '../lib/model.ts';
+import { initialState, exampleState, at, MINUTE } from '../lib/model.ts';
 import { createAnnaStateStore } from '../lib/anna-storage.ts';
+import { saveHabit, habitTaskId } from '../lib/habits.ts';
+import { generatePlan } from '../lib/scheduler.ts';
+import { acceptDailyPlan, habitScheduleSummary } from '../lib/planning.ts';
+import { startFocus } from '../lib/actions.ts';
+import { startPomodoro, settleTimer } from '../lib/timer.ts';
 
 // Use ONLY with the disposable local harness started for this check.
 const base = process.env.ANNA_SMOKE_URL || 'http://localhost:5180';
@@ -65,6 +70,57 @@ const sample = exampleState(initialState(), 'en');
 await store.update(() => sample);
 await store.refresh();
 assert.deepEqual(store.read(), sample);
+// Review regression: save a habit, accept its actual time block, reopen, focus.
+const seed = initialState();
+seed.checkin = {
+  ...seed.checkin,
+  date: '2026-09-18',
+  start: '20:00',
+  end: '21:00',
+};
+const now = at(seed.checkin.date, '20:00');
+await store.update(() =>
+  saveHabit(seed, {
+    id: 'walking',
+    title: 'Walking',
+    minutes: 15,
+    energy: 'medium',
+    priority: 2,
+    days: [0, 1, 2, 3, 4, 5, 6],
+    enabled: true,
+    splittable: false,
+  }),
+);
+const preview = generatePlan(store.read(), seed.checkin, now);
+assert.deepEqual(habitScheduleSummary(store.read(), preview), {
+  total: 1,
+  scheduled: 1,
+  remainingTitles: [],
+});
+await store.update((state) => acceptDailyPlan(state, preview));
+await store.refresh();
+const block = store
+  .read()
+  .plan.blocks.find(
+    (item) => item.taskId === habitTaskId('walking', seed.checkin.date),
+  );
+assert.ok(block, 'Walking must persist as a scheduled block');
+assert.equal(block.end - block.start, 15 * MINUTE);
+await store.update((state) =>
+  startFocus(state, block.taskId, block.id, block.start),
+);
+await store.refresh();
+assert.equal(store.read().timer.taskId, block.taskId);
+assert.equal(store.read().timer.status, 'running');
+// Free Pomodoro must also work with no check-in or accepted plan.
+await store.update(() => startPomodoro(initialState(), now));
+await store.refresh();
+assert.equal(store.read().timer.taskId, '');
+await store.update((state) => settleTimer(state, now + MINUTE));
+await store.refresh();
+assert.equal(store.read().timer, null);
+assert.equal(store.read().sessions.length, 1);
+assert.equal(store.read().sessions[0].durationMs, MINUTE);
 await rpc('storage', 'set', { key: 'evening-bell.language', value: 'zh-CN' });
 assert.equal(
   (await rpc('storage', 'get', { key: 'evening-bell.language' })).value,
@@ -74,5 +130,5 @@ await assert.rejects(
   rpc('storage', 'delete', { key: 'evening-bell.language' }),
 );
 console.log(
-  'ANNA smoke passed: HTML/assets/SDK, window handshake, declared grants, record save/reload, language storage, denied undeclared permission. No model request made.',
+  'ANNA smoke passed: HTML/assets/SDK, window handshake, declared grants, record save/reload, Walking 15-minute schedule, scheduled Start Focus, anytime Pomodoro and session persistence, language storage, denied undeclared permission. No model request made.',
 );

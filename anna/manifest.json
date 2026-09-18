@@ -15,7 +15,7 @@
     "views": [
       {
         "name": "main",
-        "title": "Evening Bell · 晚钟",
+        "title": "Evening Bell",
         "default": true,
         "min_size": { "w": 320, "h": 480 },
         "default_size": { "w": 1200, "h": 800 },

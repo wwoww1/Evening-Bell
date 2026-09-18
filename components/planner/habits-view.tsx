@@ -32,14 +32,8 @@ import { Field, Choice, Check, energyOptions } from './controls';
 import { atomicUpdate } from '@/lib/store';
 import { uid, localDate } from '@/lib/model';
 import type { AppState, Habit, Energy } from '@/lib/model';
-import {
-  habitTaskId,
-  isHabitDay,
-  materializeHabits,
-  saveHabit,
-  removeHabit,
-} from '@/lib/habits';
-import { currentPlan, recordProgress } from '@/lib/actions';
+import { habitTaskId, isHabitDay, saveHabit, removeHabit } from '@/lib/habits';
+import { currentPlan, completeHabitForDay } from '@/lib/actions';
 
 const emptyHabit = (): Habit => ({
   id: uid(),
@@ -85,12 +79,14 @@ export function HabitsView({
         <div>
           <h2>{tr('每天想为自己做的事')}</h2>
           <p className="muted">
-            {tr('不需要截止日期。小晚会在安排今晚时，一并考虑当天的习惯。')}
+            {tr(
+              '不需要截止日期。保存后，当天启用的习惯会直接显示在 Today（今天）。',
+            )}
           </p>
         </div>
         <div className="actions">
           <Button variant="outline" onClick={onSchedule}>
-            {tr('加入今晚的安排')}
+            {tr('预览今晚安排')}
           </Button>
           <Button
             onClick={() => {
@@ -128,7 +124,15 @@ export function HabitsView({
               scheduled = isHabitDay(h, date),
               skipped =
                 state.skipped.date === date &&
-                state.skipped.ids.includes(habitTaskId(h.id, date));
+                state.skipped.ids.includes(habitTaskId(h.id, date)),
+              planned =
+                state.plan?.date === date &&
+                state.plan.blocks.some(
+                  (block) =>
+                    block.type === 'focus' &&
+                    !block.done &&
+                    block.taskId === habitTaskId(h.id, date),
+                );
             return (
               <section
                 key={h.id}
@@ -145,7 +149,7 @@ export function HabitsView({
                       void update(
                         (s) => saveHabit(s, { ...h, enabled: v }),
                         v
-                          ? tr('习惯已启用，下次排程会纳入。')
+                          ? tr('习惯已启用，会按重复日期显示在 Today（今天）。')
                           : tr('习惯已暂停，历史记录保留。'),
                       )
                     }
@@ -187,7 +191,9 @@ export function HabitsView({
                         ? tr('今天休息')
                         : skipped
                           ? tr('今天已延后')
-                          : tr('今天待安排')}{' '}
+                          : planned
+                            ? tr('已安排时段')
+                            : tr('今天待安排')}{' '}
                   · {h.splittable ? tr('可以分次完成') : tr('安排一段完整时间')}
                 </p>
                 <div className="actions mt-5">
@@ -196,14 +202,7 @@ export function HabitsView({
                     disabled={done || !scheduled || !!state.timer}
                     onClick={() =>
                       void update(
-                        (s) =>
-                          recordProgress(
-                            materializeHabits(s, date),
-                            habitTaskId(h.id, date),
-                            true,
-                            0,
-                            false,
-                          ),
+                        (s) => completeHabitForDay(s, h.id, date),
                         tr('{0}：今天已完成。', [h.title]),
                       )
                     }
@@ -343,7 +342,7 @@ export function HabitsView({
                     await update(
                       (s) =>
                         saveHabit(s, { ...draft, title: draft.title.trim() }),
-                      tr('习惯已保存，安排今晚时会自动纳入。'),
+                      tr('习惯已保存，会按重复日期显示在 Today（今天）。'),
                     )
                   )
                     setDraft(null);

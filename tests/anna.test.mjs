@@ -1,8 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createAnnaStateStore, MAX_STATE_BYTES } from '../lib/anna-storage.ts';
-import { initialState, exampleState } from '../lib/model.ts';
-import { createTimer, settleTimer } from '../lib/timer.ts';
+import {
+  createAnnaStateStore,
+  MAX_STATE_BYTES,
+  AnnaStorageError,
+  storageErrorMessage,
+} from '../lib/anna-storage.ts';
+import { initialState, exampleState, at, MINUTE } from '../lib/model.ts';
+import { createTimer, settleTimer, startPomodoro } from '../lib/timer.ts';
 import { parseBackup } from '../lib/backup.ts';
 import { handleAgentRequest } from '../lib/agent-service.ts';
 import { installAnnaRuntime } from '../lib/anna-runtime.ts';
@@ -14,7 +19,10 @@ import {
   assertGoalUnchanged,
   goalEditBaseline,
 } from '../lib/editing.ts';
-import { recordProgress } from '../lib/actions.ts';
+import { recordProgress, startFocus } from '../lib/actions.ts';
+import { generatePlan } from '../lib/scheduler.ts';
+import { acceptDailyPlan, habitScheduleSummary } from '../lib/planning.ts';
+import { saveHabit, habitTaskId } from '../lib/habits.ts';
 import { translate } from '../lib/i18n.ts';
 import { atomicUpdate, initializeState } from '../lib/store.ts';
 
@@ -433,4 +441,106 @@ test('ANNA saves preserve localized edit conflict messages and never replace rem
   }
   assert.deepEqual(api.peek(), before);
   assert.equal(api.writes, 0);
+  await assert.rejects(
+    atomicUpdate(() => {
+      throw new Error('还没到这段专注的开始时间。如需提前，请先调整今日安排。');
+    }),
+    /还没到这段专注/,
+  );
+  api.fail = Object.assign(new Error('RPC timed out'), { code: 'timeout' });
+  await assert.rejects(
+    atomicUpdate((state) => ({ ...state, timer: createTimer('', 25) })),
+    /did not respond in time/,
+  );
+  assert.equal(api.peek().timer, null);
+  api.fail = null;
+});
+
+test('ANNA focus validation remains actionable; actual storage failures retain transport details', async () => {
+  const start = at('2026-09-18', '20:00');
+  const seed = exampleState(initialState());
+  seed.checkin = {
+    ...seed.checkin,
+    date: '2026-09-18',
+    start: '20:00',
+    end: '22:00',
+  };
+  const api = host(seed);
+  const store = createAnnaStateStore(api, () => {});
+  await store.refresh();
+  await assert.rejects(
+    store.update((state) =>
+      startFocus(state, state.tasks[0].id, undefined, start - MINUTE),
+    ),
+    (error) => {
+      assert.equal(error instanceof AnnaStorageError, false);
+      assert.match(storageErrorMessage(error, 'zh-CN'), /开始时间/);
+      assert.doesNotMatch(storageErrorMessage(error, 'zh-CN'), /检查连接/);
+      return true;
+    },
+  );
+  assert.equal(api.writes, 0);
+  await store.update((state) => startPomodoro(state, start - MINUTE));
+  await store.refresh();
+  assert.equal(store.read().timer.status, 'running');
+  api.fail = Object.assign(new Error('host failed'), {
+    details: { errorCode: 'permission_denied' },
+  });
+  await assert.rejects(
+    store.update((state) => settleTimer(state, start)),
+    (error) => {
+      assert.ok(error instanceof AnnaStorageError);
+      assert.match(storageErrorMessage(error, 'en'), /Installed Apps/);
+      return true;
+    },
+  );
+  assert.equal(store.read().sessions.length, 0);
+  api.fail = null;
+  await store.update((state) => settleTimer(state, start));
+  assert.equal(store.read().sessions.length, 1);
+});
+
+test('ANNA save Walking 15 min, preview and accept persists a real time block after reopening', async () => {
+  const now = at('2026-09-18', '20:00');
+  const seed = initialState();
+  seed.checkin = {
+    ...seed.checkin,
+    date: '2026-09-18',
+    start: '20:00',
+    end: '21:00',
+  };
+  const api = host(seed);
+  const store = createAnnaStateStore(api, () => {});
+  await store.refresh();
+  await store.update((state) =>
+    saveHabit(state, {
+      id: 'walking',
+      title: 'Walking',
+      minutes: 15,
+      energy: 'medium',
+      priority: 2,
+      days: [0, 1, 2, 3, 4, 5, 6],
+      enabled: true,
+      splittable: false,
+    }),
+  );
+  const preview = generatePlan(store.read(), seed.checkin, now);
+  assert.deepEqual(habitScheduleSummary(store.read(), preview), {
+    total: 1,
+    scheduled: 1,
+    remainingTitles: [],
+  });
+  await store.update((state) => acceptDailyPlan(state, preview));
+  const reopened = createAnnaStateStore(api, () => {});
+  await reopened.refresh();
+  const block = reopened
+    .read()
+    .plan.blocks.find(
+      (item) => item.taskId === habitTaskId('walking', seed.checkin.date),
+    );
+  assert.equal(block.end - block.start, 15 * MINUTE);
+  await reopened.update((state) =>
+    startFocus(state, block.taskId, block.id, block.start),
+  );
+  assert.equal(reopened.read().timer.taskId, block.taskId);
 });

@@ -1,6 +1,26 @@
 // Chinese source keys preserve compatibility with existing saved system messages.
 // Keep numbered placeholders identical in both languages. User-authored content is never translated.
 export const messages: Record<string, string> = {
+  预览今晚安排: "Preview tonight's plan",
+  '安排已采纳，已完整安排 {0}/{1} 项习惯。':
+    'Plan saved with {0}/{1} habits fully scheduled.',
+  '本次预览已完整安排 {0}/{1} 项习惯；点击采纳后保存。':
+    'This preview fully schedules {0}/{1} habits. Accept the plan to save it.',
+  '尚未排满：{0}。请增加可用时间或调整安排。':
+    'Not fully scheduled: {0}. Add more available time or adjust the plan.',
+  今日习惯: "Today's habits",
+  '已完成 {0}/{1}': '{0}/{1} completed',
+  已安排时段: 'Scheduled',
+  安排习惯时段: 'Schedule habits',
+  '标记{0}今天完成': 'Mark {0} complete today',
+  '当天的习惯会自动显示在这里，可以直接打卡，也可以安排具体时段。':
+    'Habits for today appear here automatically. Check them off or schedule a time slot.',
+  '不需要截止日期。保存后，当天启用的习惯会直接显示在 Today（今天）。':
+    'No deadline needed. After saving, habits enabled for today appear directly in Today.',
+  '习惯已启用，会按重复日期显示在 Today（今天）。':
+    'Habit enabled. It will appear in Today on its repeat days.',
+  '习惯已保存，会按重复日期显示在 Today（今天）。':
+    'Habit saved. It will appear in Today on its repeat days.',
   自由专注: 'Free focus',
   开始番茄钟: 'Start Pomodoro',
   '番茄钟已开始，按自己的节奏专注。':
