@@ -99,7 +99,13 @@ import {
   parseCheckin,
   windowFor,
 } from '@/lib/scheduler';
-import { elapsed, pauseTimer, resumeTimer, settleTimer } from '@/lib/timer';
+import {
+  elapsed,
+  pauseTimer,
+  resumeTimer,
+  settleTimer,
+  startPomodoro,
+} from '@/lib/timer';
 
 import { LanguageSwitcher } from './language-switcher';
 import { currentPlan, startFocus, recordProgress } from '@/lib/actions';
@@ -289,7 +295,9 @@ export default function PlannerApp() {
               title: t.kind === 'focus' ? tr('专注结束') : tr('休息结束'),
               message:
                 t.kind === 'focus'
-                  ? tr('计时已记录，请确认任务进度。')
+                  ? t.taskId
+                    ? tr('计时已记录，请确认任务进度。')
+                    : tr('专注已记录，可在专注记录中添加备注。')
                   : tr('准备好了，可以开始下一步。'),
               createdAt: Date.now(),
               kind: 'timer',
@@ -299,14 +307,18 @@ export default function PlannerApp() {
           if (won) {
             setNotice(
               t.kind === 'focus'
-                ? tr('这一段专注结束了，请确认任务进度。')
+                ? t.taskId
+                  ? tr('这一段专注结束了，请确认任务进度。')
+                  : tr('专注已记录，可在专注记录中添加备注。')
                 : tr('休息结束，可以按自己的节奏继续。'),
             );
             notifyDevice(
               current,
               t.kind === 'focus' ? tr('专注结束') : tr('休息结束'),
               t.kind === 'focus'
-                ? tr('计时已记录，请确认任务是否完成。')
+                ? t.taskId
+                  ? tr('计时已记录，请确认任务是否完成。')
+                  : tr('专注已记录，可在专注记录中添加备注。')
                 : tr('准备好了再开始下一步。'),
             );
           }
@@ -693,16 +705,7 @@ export default function PlannerApp() {
       : state.settings.focusMinutes * MINUTE;
   const clock = `${String(Math.floor(Math.ceil(remainingMs / 1000) / 60)).padStart(2, '0')}:${String(Math.ceil(remainingMs / 1000) % 60).padStart(2, '0')}`;
   const todayPlan = currentPlan(state, now);
-  const nextBlock = todayPlan?.blocks.find(
-    (b) =>
-      b.type === 'focus' &&
-      !b.done &&
-      b.end > now &&
-      state.tasks.some((t) => t.id === b.taskId && activeTask(t)),
-  );
-  const nextTask =
-    state.tasks.find((t) => t.id === (timer?.taskId || nextBlock?.taskId)) ||
-    tasksForDay(state, todayPlan?.date || localDate()).find(activeTask);
+  const timerTask = state.tasks.find((t) => t.id === timer?.taskId);
   const hasWork =
     state.tasks.some((t) => !t.habitId && activeTask(t)) ||
     state.habits.some((h) => h.enabled);
@@ -1313,7 +1316,7 @@ export default function PlannerApp() {
                   <h3 className="focus-task">
                     {timer?.kind === 'break'
                       ? tr('给自己充个电')
-                      : nextTask?.title || tr('选择一件值得开始的小事')}
+                      : timerTask?.title || tr('自由专注')}
                   </h3>
                   <div className="actions justify-center mt-5">
                     {timer && timer.status !== 'awaiting' ? (
@@ -1344,6 +1347,10 @@ export default function PlannerApp() {
                                   ? { ...s, timer: null }
                                   : settleTimer(s),
                               );
+                              if (timer.kind === 'focus' && !timer.taskId)
+                                setNotice(
+                                  tr('专注已记录，可在专注记录中添加备注。'),
+                                );
                             })
                           }
                         >
@@ -1354,11 +1361,15 @@ export default function PlannerApp() {
                     ) : !timer ? (
                       <Button
                         className="w-full"
-                        disabled={!nextTask}
-                        onClick={() => nextTask && start(nextTask, nextBlock)}
+                        onClick={() =>
+                          safely(async () => {
+                            await atomicUpdate((s) => startPomodoro(s));
+                            setNotice(tr('番茄钟已开始，按自己的节奏专注。'));
+                          })
+                        }
                       >
                         <Play />
-                        {tr(' 开始专注')}
+                        {tr('开始番茄钟')}
                       </Button>
                     ) : (
                       <p className="muted">{tr('请在进度窗口中完成反馈。')}</p>
@@ -1367,8 +1378,18 @@ export default function PlannerApp() {
                   <p className="muted mt-4">
                     {timer?.kind === 'break'
                       ? tr('休息不会计入专注时长。')
-                      : tr('专注结束后，由你确认是否完成。')}
+                      : timer?.taskId
+                        ? tr('专注结束后，由你确认是否完成。')
+                        : tr('随时开始，结束后自动记录时段，也可以补充备注。')}
                   </p>
+                  <Button
+                    variant="ghost"
+                    className="w-full mt-2"
+                    onClick={() => setView('records')}
+                  >
+                    <History size={16} />
+                    {tr('查看记录 / 添加备注')}
+                  </Button>
                 </section>
                 {state.settings.companion && (
                   <>
@@ -2031,8 +2052,15 @@ export default function PlannerApp() {
                   safely(async () => {
                     const next = switchTarget;
                     setSwitchTarget(null);
-                    if (readState().timer?.kind === 'break') {
-                      await atomicUpdate((s) => ({ ...s, timer: null }));
+                    const current = readState().timer;
+                    if (current?.kind === 'break' || !current?.taskId) {
+                      await atomicUpdate((s) => {
+                        if (s.timer?.id !== current?.id)
+                          throw new Error(tr('计时状态已变化，请重试。'));
+                        return current?.kind === 'break'
+                          ? { ...s, timer: null }
+                          : settleTimer(s);
+                      });
                       await start(next.task, next.block, true);
                     } else {
                       setPendingStart(next);

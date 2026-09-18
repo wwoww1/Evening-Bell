@@ -1,5 +1,13 @@
 # Verification
 
+## ANNA version upload — 2026-09-14
+
+- Completed the user-approved CLI device authorization and uploaded to the existing Evening Bell app: ID `255`, slug `ai-planning-companion`.
+- Rebuilt the ANNA static bundle and passed the official strict manifest validation. The upload reported five files, 837.9 KiB, with bundle status `ready`.
+- Created immutable version `0.2.0`, version ID `763`. Independent remote status and version-list reads confirm one version, app status `draft`, no review candidate, and no public release.
+- The stock CLI preview crashed on Windows with a libuv closing-handle assertion. Calling the same installed official `runAppsPublish` module with natural process shutdown completed both preview and upload successfully. The temporary runner is in ignored `work/publish-anna.mjs`; the installed package was not modified.
+- Local runtime testing was skipped at the user's request. This upload does not establish real LLM/APS behavior, platform installation, or mobile interaction. The September 9 test results below remain historical results.
+
 ## ANNA release review — 2026-09-09
 
 - All 71 regression tests passed after the stale-edit fixes, including five new tests for concurrent settings/goal edits and localized conflict messages.

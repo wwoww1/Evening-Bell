@@ -44,6 +44,20 @@ export function pauseTimer(t: Timer, now = Date.now()): Timer {
 export function resumeTimer(t: Timer, now = Date.now()): Timer {
   return { ...t, segmentStart: now, status: 'running' };
 }
+export function startPomodoro(state: AppState, now = Date.now()): AppState {
+  if (state.timer) throw new Error('已有计时，请先结算。');
+  return {
+    ...state,
+    timer: createTimer(
+      '',
+      state.settings.focusMinutes,
+      'focus',
+      undefined,
+      state.settings.demoTimer,
+      now,
+    ),
+  };
+}
 export function settleTimer(state: AppState, now = Date.now()): AppState {
   const t = state.timer;
   if (!t) return state;
@@ -57,7 +71,8 @@ export function settleTimer(state: AppState, now = Date.now()): AppState {
             id: t.id,
             taskId: t.taskId,
             title:
-              state.tasks.find((x) => x.id === t.taskId)?.title || '已删除任务',
+              state.tasks.find((x) => x.id === t.taskId)?.title ||
+              (t.taskId ? '已删除任务' : '自由专注'),
             startedAt: t.startedAt,
             endedAt: Math.min(
               now,
@@ -71,11 +86,14 @@ export function settleTimer(state: AppState, now = Date.now()): AppState {
   return {
     ...state,
     sessions,
-    timer: {
-      ...t,
-      status: 'awaiting',
-      elapsedMs: durationMs,
-      segmentStart: null,
-    },
+    timer:
+      t.kind === 'focus' && !t.taskId
+        ? null
+        : {
+            ...t,
+            status: 'awaiting',
+            elapsedMs: durationMs,
+            segmentStart: null,
+          },
   };
 }

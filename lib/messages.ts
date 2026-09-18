@@ -1,28 +1,69 @@
 // Chinese source keys preserve compatibility with existing saved system messages.
 // Keep numbered placeholders identical in both languages. User-authored content is never translated.
 export const messages: Record<string, string> = {
+  自由专注: 'Free focus',
+  开始番茄钟: 'Start Pomodoro',
+  '番茄钟已开始，按自己的节奏专注。':
+    'Pomodoro started. Focus at your own pace.',
+  '专注已记录，可在专注记录中添加备注。':
+    'Focus saved. Add a note in Focus history.',
+  '随时开始，结束后自动记录时段，也可以补充备注。':
+    'Start anytime. Your session is saved when it ends, and you can add a note.',
+  '查看记录 / 添加备注': 'View history / Add notes',
+  '计时状态已变化，请重试。': 'The timer has changed. Please try again.',
+  当日专注: 'Focus on selected day',
+  当日番茄钟: 'Sessions on selected day',
+  记录日期: 'Record date',
+  前一天: 'Previous day',
+  后一天: 'Next day',
+  '跨午夜的专注归入开始当天，暂停不计入专注时长。':
+    'Overnight sessions belong to their start date. Pauses are excluded from focus time.',
+  这一天还没有专注记录: 'No focus sessions on this day',
+  '换个日期查看，或随时开始一段番茄钟。':
+    'Choose another date, or start a Pomodoro anytime.',
+  '这段时间做了什么？': 'What did you work on?',
+  '例如：读完一章书，整理了项目思路':
+    'For example: read a chapter or outlined project ideas',
+  添加备注: 'Add note',
+  编辑备注: 'Edit note',
+  保存备注: 'Save note',
+  '备注已保存。': 'Note saved.',
+  '这条记录已在其他窗口更新或删除，请重新打开记录后编辑。':
+    'This record changed or was deleted in another window. Reopen it before editing.',
+  '备注最多 2000 字。': 'Notes can contain up to 2,000 characters.',
   '偏好已在其他窗口或设备更新，本次修改未保存。草稿仍保留，请记下修改后重新打开设置，查看最新内容。':
     'Preferences changed in another window or device. Your changes were not saved, and your draft is still here. Note your edits, then reopen Settings to review the latest preferences.',
   '此目标或任务已在其他窗口或设备更新或删除，本次修改未保存。草稿仍保留，请记下修改后关闭编辑器，查看最新目标再编辑。':
     'This goal or its tasks changed or were deleted in another window or device. Your changes were not saved, and your draft is still here. Note your edits, close the editor, and review the latest goal before editing again.',
-  '反馈保存在你的 ANNA 应用数据中，可以导出分享，不会自动发送给开发者。': 'Feedback is saved in your ANNA App data and can be exported. It is not automatically sent to the developer.',
+  '反馈保存在你的 ANNA 应用数据中，可以导出分享，不会自动发送给开发者。':
+    'Feedback is saved in your ANNA App data and can be exported. It is not automatically sent to the developer.',
   'ANNA 数据暂不可用': 'ANNA data is temporarily unavailable',
-  '重新加载': 'Reload',
-  'ANNA 内使用应用内提醒；请保持应用打开。': 'ANNA uses in-app reminders. Keep the app open.',
-  '选择显示语言。更改会立即生效，并保存到 ANNA。': 'Choose your display language. Changes apply immediately and are saved in ANNA.',
-  '计划、专注和心情记录保存在你个人的 ANNA 应用存储中，需要联网保存。建议定期导出备份。': 'Plans, focus and mood records are saved in your personal ANNA App storage. Saving requires a connection. Export backups regularly.',
-  '导入备份': 'Import backup',
-  '备份超过 240 KiB，请先精简原应用中的记录。': 'The backup exceeds 240 KiB. Reduce old records in the original app first.',
-  '备份数据格式无效，未导入任何内容。': 'Invalid backup format. Nothing has been imported.',
-  '旧网页版数据可先导出，再在这里导入。打开多个窗口时，请等待保存完成；其他窗口的更新会在切回或稍后读取。': 'Export data from the original web app, then import it here. Wait for saves to finish when using multiple windows. Other windows refresh on focus or shortly afterwards.',
-  'AI 拆分、排序和陪伴会将相关计划及输入发送到 ANNA 模型服务，并使用你的模型额度。': 'AI breakdown, ordering and coaching send relevant plans and input to ANNA’s model service and use your model quota.',
-  '隐私说明': 'Privacy notice',
-  '清除你在 ANNA 晚钟中的全部记录？': 'Clear all your Evening Bell records in ANNA?',
+  重新加载: 'Reload',
+  'ANNA 内使用应用内提醒；请保持应用打开。':
+    'ANNA uses in-app reminders. Keep the app open.',
+  '选择显示语言。更改会立即生效，并保存到 ANNA。':
+    'Choose your display language. Changes apply immediately and are saved in ANNA.',
+  '计划、专注和心情记录保存在你个人的 ANNA 应用存储中，需要联网保存。建议定期导出备份。':
+    'Plans, focus and mood records are saved in your personal ANNA App storage. Saving requires a connection. Export backups regularly.',
+  导入备份: 'Import backup',
+  '备份超过 240 KiB，请先精简原应用中的记录。':
+    'The backup exceeds 240 KiB. Reduce old records in the original app first.',
+  '备份数据格式无效，未导入任何内容。':
+    'Invalid backup format. Nothing has been imported.',
+  '旧网页版数据可先导出，再在这里导入。打开多个窗口时，请等待保存完成；其他窗口的更新会在切回或稍后读取。':
+    'Export data from the original web app, then import it here. Wait for saves to finish when using multiple windows. Other windows refresh on focus or shortly afterwards.',
+  'AI 拆分、排序和陪伴会将相关计划及输入发送到 ANNA 模型服务，并使用你的模型额度。':
+    'AI breakdown, ordering and coaching send relevant plans and input to ANNA’s model service and use your model quota.',
+  隐私说明: 'Privacy notice',
+  '清除你在 ANNA 晚钟中的全部记录？':
+    'Clear all your Evening Bell records in ANNA?',
   'ANNA 应用记录已清除。': 'ANNA App records cleared.',
   '用备份替换当前记录？': 'Replace current records with this backup?',
-  '当前计划、专注记录和偏好会被替换。请先导出当前数据；导入不会自动合并。': 'Your current plans, focus history and preferences will be replaced. Export them first; importing does not merge records.',
-  '备份包含 {0} 个目标、{1} 条专注记录。': 'This backup contains {0} goals and {1} focus records.',
-  '确认导入': 'Import and replace',
+  '当前计划、专注记录和偏好会被替换。请先导出当前数据；导入不会自动合并。':
+    'Your current plans, focus history and preferences will be replaced. Export them first; importing does not merge records.',
+  '备份包含 {0} 个目标、{1} 条专注记录。':
+    'This backup contains {0} goals and {1} focus records.',
+  确认导入: 'Import and replace',
   '备份已导入。': 'Backup imported.',
   '晚钟 · 让每一小步都有方向': 'Evening Bell · Make every small step count',
   '根据每天的时间与精力安排目标，用番茄钟专注，用温和的陪伴坚持。':

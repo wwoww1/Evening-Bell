@@ -102,6 +102,8 @@ export function parseBackup(raw: string): AppState {
     durationMs: 'number',
     demo: 'boolean',
   });
+  for (const session of state.sessions)
+    if (session.note !== undefined && typeof session.note !== 'string') fail();
   rows(state.reflections, { date: 'string', mood: 'string', note: 'string' });
   rows(state.notifications, {
     title: 'string',

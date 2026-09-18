@@ -2,7 +2,9 @@
 
 本项目已有独立 ANNA 构建入口。原有网页版继续用 `pnpm dev` 运行；ANNA 版在 `anna/`，复用中英文界面、排程、番茄钟及业务校验，无需 Python Executa 或四平台二进制构建。
 
-2026-09-09 的检查结论、真实账号验收清单、比赛截止时间与提交要求见 [上架与参赛检查单](docs/ANNA-RELEASE-CHECKLIST.zh-CN.md)。技术上允许无 Executa，并不等于已获比赛资格确认。
+2026-09-14 已上传 0.2.0：沿用账号中已有的 Evening Bell 应用（App ID `255`，slug `ai-planning-companion`），版本 ID 为 `763`。远端确认共 1 个版本，上传包为 `ready`；应用仍为 `draft`，尚未送审或公开发布。本次按用户选择跳过本地运行测试，构建与官方 strict 校验通过。
+
+2026-09-09 的代码检查结论、真实账号验收清单、比赛截止时间与提交要求见 [上架与参赛检查单](docs/ANNA-RELEASE-CHECKLIST.zh-CN.md)。技术上允许无 Executa，并不等于已获比赛资格确认。
 
 ## 已完成的适配
 
@@ -34,7 +36,7 @@ pnpm anna:login
 ```powershell
 pnpm anna:build
 pnpm anna:validate
-pnpm anna:dev --storage aps --slug evening-bell --llm-app-slug evening-bell
+pnpm anna:dev --storage aps --slug ai-planning-companion --llm-app-slug ai-planning-companion
 ```
 
 第三条命令需要已登录的 ANNA 账号，会连接真实模型与 APS。按终端显示的本地地址打开；首次运行可能需要下载 Python 运行时。若 CLI 的 8 秒启动时限早于下载完成，可先运行下列命令完成安装，然后重试：
@@ -48,7 +50,7 @@ uv tool run --from anna-app-runtime-local==0.2.0a23 anna-app-bridge --help
 仅检查本地界面和接口、无需账号或真实模型时：
 
 ```powershell
-pnpm anna:dev --no-llm --storage legacy --slug evening-bell
+pnpm anna:dev --no-llm --storage legacy --slug ai-planning-companion
 ```
 
 **legacy 模式的存储在内存中，重启或创建新测试会话会丢失。** 正式发布使用平台 APS。此模式不能证明真实模型和生产存储连通。
@@ -69,7 +71,7 @@ pnpm anna:publish
 4. 测试新建目标 → AI 拆分 → 报到排程 → 采纳 → 专注 → 完成反馈。切换语言、关闭重开验证记录。再测试导入、导出及模型拒绝授权后的本地功能。
 5. 提交该版本审核。审核通过后，在平台发布该版本。
 
-后续更新需提高 `anna/app.json` 的版本，再重复构建、上传、测试和审核。同一个不可变版本不能覆盖重传。首次标识为 `evening-bell`，发布后命名为你的开发者 `@handle/evening-bell`；不要随意更改 slug。
+后续有代码变更时，先将 `anna/app.json` 的版本提高到例如 `0.2.1`，再构建、上传并审核。同一个不可变版本不能覆盖重传。当前绑定的已有应用标识为 `ai-planning-companion`；不要随意更改 slug 或另建重复应用。
 
 ## 数据和运行边界
 
@@ -93,7 +95,7 @@ pnpm anna:validate
 
 2026-09-07 已通过 66 项自动化测试、TypeScript、Lint、普通网页生产构建及 ANNA 构建，并通过官方 CLI 严格校验。原网页版 HTTP/API 回归通过，覆盖中英文、本地拆分、输入和来源校验、PWA 资源。官方 ANNA 本地运行时的 HTTP/RPC 检查覆盖页面和资源加载、SDK、窗口握手、实际权限结构、数据保存与重读、语言保存以及未声明权限被拒绝。该检查使用临时本地 legacy 会话，不调用真实模型。9 月 9 日再次检查并修复多窗口陈旧编辑覆盖问题，最终结果见 [验证记录](docs/verification.md)。
 
-可在专门启动的本地 legacy 测试环境中执行 `pnpm anna:smoke`；它会创建一个新的临时测试会话。完整浏览器交互、真机移动端、账号下的真实模型/APS、上传和审核仍需按上述步骤验证。
+可在专门启动的本地 legacy 测试环境中执行 `pnpm anna:smoke`；它会创建一个新的临时测试会话。完整浏览器交互、真机移动端、账号下的真实模型/APS 和审核仍需按上述步骤验证；0.2.0 上传已于 2026-09-14 完成。
 
 需要将最新代码上传 GitHub 时，`pnpm package:github` 会生成包含 ANNA 源码的包，并排除凭证、本机 `.anna/`、构建物和依赖。
 

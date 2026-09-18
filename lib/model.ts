@@ -126,6 +126,7 @@ export interface Session {
   endedAt: number;
   durationMs: number;
   demo: boolean;
+  note?: string;
 }
 export interface Reflection {
   id: string;

@@ -1,13 +1,23 @@
 'use client';
 import { useI18n } from '@/components/planner/language-provider';
 import { useState } from 'react';
-import { CheckCircle2, Clock3, History, Sparkles, Trash2 } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  History,
+  Pencil,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Field } from './controls';
 import { atomicUpdate } from '@/lib/store';
-import { localDate, MINUTE, uid, clockTime } from '@/lib/model';
-import type { AppState } from '@/lib/model';
+import { localDate, addDays, MINUTE, uid, clockTime } from '@/lib/model';
+import type { AppState, Session } from '@/lib/model';
+import { sessionsOnDate, updateSessionNote } from '@/lib/sessions';
 const wholeMinutes = (ms: number) => Math.floor(ms / MINUTE);
 const secondsPart = (ms: number) => Math.floor(ms / 1000) % 60;
 export function RecordsView({
@@ -22,24 +32,28 @@ export function RecordsView({
     existing = state.reflections.find((r) => r.date === today);
   const [note, setNote] = useState(existing?.note || ''),
     [mood, setMood] = useState(existing?.mood || '');
+  const [selectedDate, setSelectedDate] = useState(today);
+  const daySessions = sessionsOnDate(state.sessions, selectedDate);
+  const realDaySessions = daySessions.filter((s) => !s.demo);
   const sessions = state.sessions.filter((s) => !s.demo),
     todaySessions = sessions.filter(
       (s) => localDate(new Date(s.startedAt)) === today,
     );
   const total = sessions.reduce((n, s) => n + s.durationMs, 0);
-  const todayMinutes = wholeMinutes(
-    todaySessions.reduce((n, s) => n + s.durationMs, 0),
+  const dayMinutes = wholeMinutes(
+    realDaySessions.reduce((n, s) => n + s.durationMs, 0),
   );
-  const done = state.tasks.filter((t) => t.status === 'done').length;
   return (
     <div className="form-stack">
       <div className="stat-grid">
         <div className="stat-card">
           <Clock3 />
           <div>
-            <span>{tr('今天专注')}</span>
+            <span>
+              {selectedDate === today ? tr('今天专注') : tr('当日专注')}
+            </span>
             <strong>
-              {todayMinutes}
+              {dayMinutes}
               <small>{tr(' 分钟')}</small>
             </strong>
           </div>
@@ -55,12 +69,12 @@ export function RecordsView({
           </div>
         </div>
         <div className="stat-card">
-          <CheckCircle2 />
+          <CalendarDays />
           <div>
-            <span>{tr('已完成任务')}</span>
+            <span>{tr('当日番茄钟')}</span>
             <strong>
-              {done}
-              <small>{tr(' 项')}</small>
+              {realDaySessions.length}
+              <small>{tr(' 段')}</small>
             </strong>
           </div>
         </div>
@@ -73,37 +87,59 @@ export function RecordsView({
               <TabsTrigger value="reflections">{tr('每日复盘')}</TabsTrigger>
             </TabsList>
             <TabsContent value="sessions">
+              <div className="record-date-bar">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={tr('前一天')}
+                  onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+                <Field label={tr('记录日期')}>
+                  <input
+                    type="date"
+                    max={today}
+                    value={selectedDate}
+                    onChange={(e) => {
+                      if (e.target.value && e.target.validity.valid)
+                        setSelectedDate(e.target.value);
+                    }}
+                  />
+                </Field>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={tr('后一天')}
+                  disabled={selectedDate >= today}
+                  onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+                >
+                  <ChevronRight size={16} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  disabled={selectedDate === today}
+                  onClick={() => setSelectedDate(today)}
+                >
+                  {tr('今天')}
+                </Button>
+              </div>
+              <p className="muted record-date-note">
+                {tr('跨午夜的专注归入开始当天，暂停不计入专注时长。')}
+              </p>
               <div className="record-list">
-                {[...state.sessions].reverse().map((s) => (
-                  <div className="record-item" key={s.id}>
-                    <span className="record-icon">
-                      <Clock3 size={19} />
-                    </span>
-                    <div>
-                      <h3>
-                        {s.title}
-                        {s.demo && (
-                          <span className="tag ml-2">{tr('演示')}</span>
-                        )}
-                      </h3>
-                      <p className="muted">
-                        {localDate(new Date(s.startedAt))} ·{' '}
-                        {clockTime(s.startedAt)}–{clockTime(s.endedAt)}
-                      </p>
-                    </div>
-                    <strong>
-                      {wholeMinutes(s.durationMs)}
-                      {tr('分')}
-                      {secondsPart(s.durationMs)}
-                      {tr('秒')}
-                    </strong>
-                  </div>
+                {daySessions.map((session) => (
+                  <SessionRecord
+                    key={session.id}
+                    session={session}
+                    onNotice={onNotice}
+                  />
                 ))}
-                {!state.sessions.length && (
+                {!daySessions.length && (
                   <div className="empty-state">
                     <Clock3 />
-                    <h3>{tr('从第一段专注开始')}</h3>
-                    <p>{tr('每次真实投入，都会留在这里。')}</p>
+                    <h3>{tr('这一天还没有专注记录')}</h3>
+                    <p>{tr('换个日期查看，或随时开始一段番茄钟。')}</p>
                   </div>
                 )}
               </div>
@@ -195,5 +231,110 @@ export function RecordsView({
         </aside>
       </div>
     </div>
+  );
+}
+
+function SessionRecord({
+  session,
+  onNotice,
+}: {
+  session: Session;
+  onNotice: (message: string) => void;
+}) {
+  const { tr } = useI18n();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [baseline, setBaseline] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const startDate = localDate(new Date(session.startedAt));
+  const endDate = localDate(new Date(session.endedAt));
+  async function save() {
+    setSaving(true);
+    setError('');
+    try {
+      await atomicUpdate((old) =>
+        updateSessionNote(old, session.id, draft, baseline),
+      );
+      setEditing(false);
+      onNotice(tr('备注已保存。'));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+  return (
+    <article className="session-record">
+      <div className="record-item">
+        <span className="record-icon">
+          <Clock3 size={19} />
+        </span>
+        <div>
+          <h3>
+            {session.taskId ? session.title : tr('自由专注')}
+            {session.demo && <span className="tag ml-2">{tr('演示')}</span>}
+          </h3>
+          <p className="muted">
+            {clockTime(session.startedAt)}–
+            {endDate !== startDate ? `${endDate} ` : ''}
+            {clockTime(session.endedAt)}
+          </p>
+        </div>
+        <strong>
+          {wholeMinutes(session.durationMs)}
+          {tr('分')}
+          {secondsPart(session.durationMs)}
+          {tr('秒')}
+        </strong>
+      </div>
+      {editing ? (
+        <div className="form-stack session-note-editor">
+          <Field label={tr('这段时间做了什么？')}>
+            <textarea
+              maxLength={2000}
+              value={draft}
+              disabled={saving}
+              placeholder={tr('例如：读完一章书，整理了项目思路')}
+              onChange={(e) => setDraft(e.target.value)}
+            />
+          </Field>
+          <div className="actions">
+            <Button disabled={saving} onClick={save}>
+              {saving ? tr('保存中…') : tr('保存备注')}
+            </Button>
+            <Button
+              variant="ghost"
+              disabled={saving}
+              onClick={() => setEditing(false)}
+            >
+              {tr('取消')}
+            </Button>
+          </div>
+          {error && (
+            <p className="alert error" role="alert">
+              {tr(error)}
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="session-note">
+          {session.note && <p>{session.note}</p>}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setDraft(session.note || '');
+              setBaseline(session.note || '');
+              setError('');
+              setEditing(true);
+            }}
+          >
+            <Pencil size={14} />
+            {session.note ? tr('编辑备注') : tr('添加备注')}
+          </Button>
+        </div>
+      )}
+    </article>
   );
 }
