@@ -1,6 +1,10 @@
 # Review follow-up — 2026-09-18
 
-## Current status
+## Review submission on 2026-09-19
+
+Added an English Daily Habits screenshot (`docs/screenshots/04-daily-habits-en.jpg`) as the fourth listing image and uploaded it directly to ANNA CDN. After verifying the image and all four listing references, submitted app `255` for review. The response and subsequent read confirm **`pending_review`**, candidate **`0.2.1`**, version ID **818**. This is a review submission, not an approval or public release. No application code changed in this follow-up.
+
+## Upload status on 2026-09-18
 
 The fixes were committed and pushed to GitHub as `57abf70`, then uploaded to the existing ANNA app (ID `255`) as **0.2.1**, version ID **818**. The immutable bundle is `bundle_ready` (5 files, 868,983 bytes). The English screenshots are public on GitHub Pages, and ANNA listing fields match the local configuration. No reviewer reply, resubmission, or public app release was made. The app still has the previous `rejected` review status; production user flows still need a final test with the updated build.
 
